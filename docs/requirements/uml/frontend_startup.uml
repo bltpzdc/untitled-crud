@@ -1,0 +1,13 @@
+@startuml
+start
+skinparam MinClassWidth 450
+skinparam DefaultTextAlignment center
+skinparam dpi 300
+
+:Распаковка архива.; <<task>>
+:Запуск docker-compose образа сервисов.; <<task>>
+:Открытие веб-браузера.; <<task>>
+:Открытие ссылки https://127.0.0.1:8384.; <<task>>
+
+stop
+@enduml
