@@ -16,20 +16,45 @@ import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
 import SmartphoneRoundedIcon from '@mui/icons-material/SmartphoneRounded';
 import ConstructionRoundedIcon from '@mui/icons-material/ConstructionRounded';
 
-export default function SelectContent() {
-  const [company, setCompany] = React.useState('');
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
 
-  const handleChange = (event) => {
-    setCompany(event.target.value);
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`full-width-tabpanel-${index}`}
+      aria-labelledby={`full-width-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          <Typography>{children}</Typography>
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index) {
+  return {
+    id: `full-width-tab-${index}`,
+    'aria-controls': `full-width-tabpanel-${index}`,
   };
+}
 
-  let value = 0;
+export default function SelectContent() {
+  const [mode, setMode] = React.useState(0);
+
+  const handleChange = (event, newvalue) => {
+    setMode(newvalue);
+  };
 
   return (
     <Box style={{ width:"100%" }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={value} onChange={handleChange} aria-label="Select mode">
-        <Tab style={{width:"50%"}} label="Просмотр"  />
-        <Tab style={{width:"50%"}} label="Загрузка"  />
+      <Tabs value={mode} onChange={handleChange} aria-label="Select mode">
+        <Tab style={{width:"50%"}} label="Просмотр" {...a11yProps(0)} />
+        <Tab style={{width:"50%"}} label="Загрузка" {...a11yProps(1)} />
       </Tabs>
     </Box>
   );
