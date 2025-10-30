@@ -14,10 +14,10 @@ import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 
 let sidepanel_runs = [
-  { text: 'Data' },
-  { text: 'Data' },
-  { text: 'Data' },
-  { text: 'Data' },
+  { text: 'Испытание 1' },
+  { text: 'Испытание 2' },
+  { text: 'Испытание 3' },
+  { text: 'Испытание 4' },
 ];
 
 export default function SideMenuContent() {
@@ -27,7 +27,6 @@ export default function SideMenuContent() {
         {sidepanel_runs.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: 'block' }}>
             <ListItemButton selected={index === 0}>
-              <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
