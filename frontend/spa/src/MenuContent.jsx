@@ -14,10 +14,10 @@ import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 
 let mainListItems = [
-  { text: 'Home'},
-  { text: 'Analytics'},
-  { text: 'Clients'},
-  { text: 'Tasks'},
+  { text: 'Data' },
+  { text: 'Data' },
+  { text: 'Data' },
+  { text: 'Data' },
 ];
 
 export default function MenuContent() {
