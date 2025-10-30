@@ -1,0 +1,26 @@
+@startuml
+skinparam dpi 300
+
+left to right direction
+
+actor "Неавторизованный пользователь" as UnauthorizedUser
+actor "Авторизованный пользователь" as AuthorizedUser
+
+package "Веб-интерфейс" {
+  usecase "Выполнить вход в учётную запись" as Login
+
+  usecase "Просмотр визуализированных отчётов" as Visuals
+  usecase "Выгрузка отчётов в сервис" as Upload
+  usecase "Загрузка отчётов из сервиса" as Download
+  usecase "Фильтрация отображаемых отчётов" as Filtering
+}
+
+UnauthorizedUser --> Login
+
+AuthorizedUser --> Visuals
+AuthorizedUser --> Upload
+AuthorizedUser --> Download
+AuthorizedUser --> Filtering
+
+@enduml
+
