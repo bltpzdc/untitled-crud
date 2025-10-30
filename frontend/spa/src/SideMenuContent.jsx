@@ -20,7 +20,7 @@ let mainListItems = [
   { text: 'Data' },
 ];
 
-export default function MenuContent() {
+export default function SideMenuContent() {
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: 'space-between' }}>
       <List dense>

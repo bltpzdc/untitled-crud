@@ -7,7 +7,7 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import SelectContent from './SelectContent';
-import MenuContent from './MenuContent';
+import SideMenuContent from './SideMenuContent';
 import OptionsMenu from './OptionsMenu';
 
 const drawerWidth = 480;
@@ -52,7 +52,6 @@ export default function SideMenu() {
           flexDirection: 'column',
         }}
       >
-        <MenuContent />
       </Box>
       <Stack
         direction="row"
