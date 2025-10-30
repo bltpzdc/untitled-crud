@@ -6,7 +6,6 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import SelectContent from './SelectContent';
-import MenuContent from './MenuContent';
 import OptionsMenu from './OptionsMenu';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -29,9 +28,9 @@ export default function MainMenu() {
   let value = 0;
   return (
     <Box style={{ width:"100%" }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={value} aria-label="Select mode">
-        <Tab style={{width:"50%"}} label="Просмотр"  />
-        <Tab style={{width:"50%"}} label="Загрузка"  />
+      <Tabs value={value} aria-label="Select mode" centered>
+        <Tab style={{width:"50%"}} label=""  />
+        <Tab style={{width:"50%"}} label=""  />
       </Tabs>
     </Box>
   );
