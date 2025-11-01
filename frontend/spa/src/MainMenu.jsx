@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
-import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -10,28 +9,17 @@ import OptionsMenu from './OptionsMenu';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
-
-const drawerWidth = 480;
-
-const Drawer = styled(MuiDrawer)({
-  width: drawerWidth,
-  flexShrink: 0,
-  boxSizing: 'border-box',
-  mt: 10,
-  [`& .${drawerClasses.paper}`]: {
-    width: drawerWidth,
-    boxSizing: 'border-box',
-  },
-});
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
 
 export default function MainMenu() {
   let value = 0;
   return (
-    <Box style={{ width:"100%" }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={value} aria-label="Select mode" centered>
-        <Tab style={{width:"50%"}} label=""  />
-        <Tab style={{width:"50%"}} label=""  />
-      </Tabs>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="fixed">
+        <Toolbar>
+        </Toolbar>
+      </AppBar>
     </Box>
   );
 }
