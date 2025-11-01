@@ -1,0 +1,1 @@
+backend [template](https://github.com/bltpzdc/swagger-ui) with github pages and tests in CI/CD
