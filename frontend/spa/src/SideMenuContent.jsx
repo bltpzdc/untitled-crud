@@ -22,10 +22,14 @@ let sidepanel_runs = [
 
 export default function SideMenuContent() {
   return (
-    <Stack sx={{ flexGrow: 1, p: 1, justifyContent: 'space-between' }}>
-      <List dense>
+    <Stack
+      sx={{
+        flexGrow: 1,
+        alignItems: 'stretch',
+        justifyContent: 'space-between' }}>
+      <List>
         {sidepanel_runs.map((item, index) => (
-          <ListItem key={index} disablePadding sx={{ display: 'block' }}>
+          <ListItem key={index}>
             <ListItemButton selected={index === 0}>
               <ListItemText primary={item.text} />
             </ListItemButton>
