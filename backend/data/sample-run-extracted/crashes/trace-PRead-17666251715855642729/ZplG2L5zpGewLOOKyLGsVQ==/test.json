@@ -1,0 +1,795 @@
+{
+  "ops": [
+    {
+      "CREATE": {
+        "path": "/4",
+        "mode": [
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 1
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/4",
+        "flags": [
+          "O_WRONLY",
+          "O_TRUNC",
+          "O_SYNC"
+        ],
+        "des": 2
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/4",
+        "flags": [
+          "O_RDONLY",
+          "O_NOFOLLOW"
+        ],
+        "des": 3
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/4",
+        "linkpath": "/4/2"
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/4"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/4",
+        "new_path": "/8"
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 3,
+        "src_offset": 0,
+        "size": 1000,
+        "offset": 128
+      }
+    },
+    {
+      "WRITE": {
+        "des": 2,
+        "src_offset": 1024,
+        "size": 100
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/5",
+        "mode": [
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 128,
+        "size": 32
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4",
+        "length": 127
+      }
+    },
+    {
+      "READ": {
+        "des": 2,
+        "size": 100
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4",
+        "length": 32767
+      }
+    },
+    {
+      "WRITE": {
+        "des": 2,
+        "src_offset": 512,
+        "size": 128
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/4",
+        "flags": [
+          "O_WRONLY",
+          "O_SYNC"
+        ],
+        "des": 4
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8",
+        "name": "user.JsktXvCEHqFdsx32CUaSB3tQ6NB0ruzgsuzfsoECIcckGqgyPScMbrF5cDV1QhLYfcOI1uW1MGzaXsze7e4u6GhBKowNr4mVPrUvl1NzcrpUc2CWLT8I8iPis3j",
+        "src_offset": 65535,
+        "size": 32
+      }
+    },
+    {
+      "SHRINK": {
+        "path": "/"
+      }
+    },
+    {
+      "PREAD": {
+        "des": 3,
+        "size": 16,
+        "offset": 1
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 4,
+        "offset": -32768,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8/2",
+        "name": "user.wBnzwRvqBmDGGfNUeAIs24X4fXc1DmPPpuA3rkTvL39WyoJnqeL6MLSdZTR92kl6GkldpIyLwt1UMpbghcmNCM3epFnFNOGBLlH5F1ZO5679BCqfqWqwuLiQgF1",
+        "src_offset": 65535,
+        "size": 1
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/8/2",
+        "linkpath": "/7"
+      }
+    },
+    {
+      "PREAD": {
+        "des": 1,
+        "size": 1024,
+        "offset": 512
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 4,
+        "src_offset": 100000,
+        "size": 32,
+        "offset": 1000
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/4/2",
+        "name": "user.tEF26iV8VcKJMUGS9FyOSUya6gdZRWWSRjMJCiNbZosk0iQ3q3qge13xLd5",
+        "src_offset": 256,
+        "size": 1
+      }
+    },
+    {
+      "WRITE": {
+        "des": 2,
+        "src_offset": 100,
+        "size": 64
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/5",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/1",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 32
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/4/2",
+        "new_path": "/8/2"
+      }
+    },
+    {
+      "PREAD": {
+        "des": 2,
+        "size": 16,
+        "offset": 1024
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/5",
+        "new_path": "/6"
+      }
+    },
+    {
+      "PREAD": {
+        "des": 3,
+        "size": 512,
+        "offset": 16
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_NOFOLLOW"
+        ],
+        "des": 5
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 2,
+        "offset": 100,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/6",
+        "flags": [
+          "O_RDONLY",
+          "O_APPEND",
+          "O_SYNC"
+        ],
+        "des": 6
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 64
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 255
+      }
+    },
+    {
+      "PREAD": {
+        "des": 3,
+        "size": 32,
+        "offset": 16
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 1000,
+        "size": 1
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/6",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 65536,
+        "size": 255
+      }
+    },
+    {
+      "PREAD": {
+        "des": 1,
+        "size": 32,
+        "offset": 1000
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 3
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_CREAT",
+          "O_NOFOLLOW"
+        ],
+        "des": 7
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/1",
+        "name": "user.QBNxZTNnIUP",
+        "src_offset": 32,
+        "size": 128
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 6,
+        "length": 256
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/1",
+        "name": "user.QBNxZTNnIUP",
+        "src_offset": 32,
+        "size": 64
+      }
+    },
+    {
+      "WRITE": {
+        "des": 2,
+        "src_offset": 32768,
+        "size": 1000
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/6/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/7"
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 7
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 8
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 6
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/1",
+        "name": "user.QBNxZTNnIUP"
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 6,
+        "length": 256
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 3,
+        "offset": 1000,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 5,
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/6/9",
+        "length": 512
+      }
+    },
+    {
+      "PREAD": {
+        "des": 6,
+        "size": 255,
+        "offset": 16
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/6/9",
+        "flags": [
+          "O_RDWR",
+          "O_NOFOLLOW"
+        ],
+        "des": 9
+      }
+    },
+    {
+      "READ": {
+        "des": 5,
+        "size": 4096
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/1"
+      }
+    },
+    {
+      "UNLINK": {
+        "path": "/1"
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 9,
+        "offset": -32769,
+        "whence": "SEEK_SET"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 32767
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/6"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8",
+        "mode": [
+          "S_IRGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 2,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 6,
+        "mode": [
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7",
+        "mode": [
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 4,
+        "offset": 127,
+        "whence": "SEEK_SET"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8/2",
+        "name": "user.yegdGUdLKeyEjhW9Se1e77vihwn",
+        "src_offset": 1000,
+        "size": 128
+      }
+    },
+    {
+      "WRITE": {
+        "des": 2,
+        "src_offset": 256,
+        "size": 100000
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/7",
+        "new_path": "/6/7"
+      }
+    },
+    {
+      "PREAD": {
+        "des": 5,
+        "size": 256,
+        "offset": 128
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/6/9",
+        "name": "user.mqS1Z0VyVV5A6qtxC2B5B92mClnBd0wXVW9omt3Mr0DJr8Fodx9mmStrDYvbMWVPQY8EJ1V1mLAkmnUy54tSBMYazuM6aRP",
+        "src_offset": 1000,
+        "size": 128
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/7",
+        "name": "user.XXMrTar9csNgdgwtGRbFTamDza274uITGtrmsyxEQKhvg1GMNxgC04xJD34buwSs9TRsD87ALgeVq5sOPamyy2PpbLmdtbl",
+        "src_offset": 256,
+        "size": 64
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/6",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_NOFOLLOW"
+        ],
+        "des": 10
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4",
+        "length": 127
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/5",
+        "new_path": "/7"
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 9,
+        "src_offset": 1024,
+        "size": 128,
+        "offset": 128
+      }
+    },
+    {
+      "REMOVE": {
+        "path": "/8/2"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 2,
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/6",
+        "new_path": "/7/3"
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 2,
+        "offset": 32,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/6",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/7",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_CREAT"
+        ],
+        "des": 11
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 4,
+        "offset": 32,
+        "whence": "SEEK_SET"
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7",
+        "mode": [
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 4,
+        "src_offset": 1000,
+        "size": 65536
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 4
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 5,
+        "mode": [
+          "S_IRGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    volumes:
+      - "untitled-crud-test:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_DB: simpleapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "1200:5432"
+volumes:
+  untitled-crud-test:
+    driver: local
+

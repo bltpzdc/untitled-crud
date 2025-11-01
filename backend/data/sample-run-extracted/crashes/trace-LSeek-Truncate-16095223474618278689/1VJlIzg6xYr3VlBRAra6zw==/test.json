@@ -1,0 +1,827 @@
+{
+  "ops": [
+    {
+      "CREATE": {
+        "path": "/5",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 1000
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/2",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/2",
+        "mode": [
+          "S_IXUSR",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/5",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/1",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/3",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/1",
+        "length": 32768
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/1",
+        "mode": [
+          "S_IXUSR"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/2",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/1",
+        "linkpath": "/2"
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7",
+        "mode": [
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/1",
+        "new_path": "/1"
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/2",
+        "new_path": "/7"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/2",
+        "length": 64
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/1",
+        "new_path": "/7"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/7",
+        "flags": [
+          "O_RDONLY"
+        ],
+        "des": 1
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7/5",
+        "mode": [
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7/5/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "PREAD": {
+        "des": 1,
+        "size": 32768,
+        "offset": 65535
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/",
+        "mode": [
+          "S_IRUSR",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 1,
+        "src_offset": 4096,
+        "size": 32
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/1",
+        "new_path": "/7/5/4"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/2",
+        "new_path": "/3"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7/5",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "UNLINK": {
+        "path": "/7/5/4"
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 1,
+        "length": 0
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/3",
+        "new_path": "/7/5/7"
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 1,
+        "offset": 16,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/5",
+        "new_path": "/7/5/2"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/7/5/2",
+        "length": 32767
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7/5/5",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/3"
+      }
+    },
+    {
+      "READ": {
+        "des": 1,
+        "size": 100
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 1,
+        "offset": 1,
+        "whence": "SEEK_CUR"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 1,
+        "src_offset": 32767,
+        "size": 512
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/7/5/8",
+        "new_path": "/7/5/7"
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/7/5/5",
+        "new_path": "/6"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/2",
+        "flags": [
+          "O_RDWR",
+          "O_CREAT"
+        ],
+        "des": 2
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 1,
+        "offset": 1024,
+        "whence": "SEEK_CUR"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/2",
+        "flags": [
+          "O_RDWR",
+          "O_APPEND",
+          "O_SYNC"
+        ],
+        "des": 3
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/7/5/2",
+        "new_path": "/7/5/4"
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 2,
+        "length": 64
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/3",
+        "length": 64
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/7/5/5",
+        "flags": [
+          "O_RDONLY"
+        ],
+        "des": 4
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "PREAD": {
+        "des": 4,
+        "size": 65536,
+        "offset": 64
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/5",
+        "length": 256
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 2,
+        "offset": 256,
+        "whence": "SEEK_CUR"
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 1,
+        "length": 127
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 2
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/2",
+        "new_path": "/7/7"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/7/7",
+        "name": "user.1HAdTUZ3Ne2Lsom0Ra3OlBW46Oj6vulP008Or6oSWzKgWqMLMcX2pm7Vw6zG5zODTYf29hjyk98XjSB0eEBaTkvflw4NUfKTRjqbVBEhgYAQ6VGgQFXRWqAfAnxLVBDH5xF129JJmZ0kuD4HTbuU4xqxNIzLiPxVPJN0mtuXolOv6QSRG9xZTTDcWlVn2XlSbcTLAgRAUQWX3BxvB3TN1SE9aghU1owzdolZsgEM2th0X7F50kPASlGHl0",
+        "src_offset": 32768,
+        "size": 128
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/2",
+        "length": 1
+      }
+    },
+    {
+      "READ": {
+        "des": 1,
+        "size": 65536
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7/7",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7/7",
+        "mode": [
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 0,
+        "path": "/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7/6",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/1",
+        "new_path": "/9/8"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9/8",
+        "name": "user.1HAdTUZ3Ne2Lsom0Ra3OlBW46Oj6vulP008Or6oSWzKgWqMLMcX2pm7Vw6zG5zODTYf29hjyk98XjSB0eEBaTkvflw4NUfKTRjqbVBEhgYAQ6VGgQFXRWqAfAnxLVBDH5xF129JJmZ0kuD4HTbuU4xqxNIzLiPxVPJN0mtuXolOv6QSRG9xZTTDcWlVn2XlSbcTLAgRAUQWX3BxvB3TN1SE9aghU1owzdolZsgEM2th0X7F50kPASlGHl0"
+      }
+    },
+    {
+      "WRITE": {
+        "des": 1,
+        "src_offset": 4096,
+        "size": 32768
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/2",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/7/5",
+        "new_path": "/7/8"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/1",
+        "name": "user.1HAdTUZ3Ne2Lsom0Ra3OlBW46Oj6vulP008Or6oSWzKgWqMLMcX2pm7Vw6zG5zODTYf29hjyk98XjSB0eEBaTkvflw4NUfKTRjqbVBEhgYAQ6VGgQFXRWqAfAnxLVBDH5xF129JJmZ0kuD4HTbuU4xqxNIzLiPxVPJN0mtuXolOv6QSRG9xZTTDcWlVn2XlSbcTLAgRAUQWX3BxvB3TN1SE9aghU1owzdolZsgEM2th0X7F50kPASlGHl0",
+        "src_offset": 1,
+        "size": 255
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/6",
+        "new_path": "/7"
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/3",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/3",
+        "name": "user.ThGpnnXGrTZ",
+        "src_offset": 127,
+        "size": 1
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 0,
+        "path": "/9/1",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 4
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/7/2",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "REMOVE": {
+        "path": "/7/5"
+      }
+    },
+    {
+      "UNLINK": {
+        "path": "/7/8/2"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IRUSR",
+          "S_IWGRP"
+        ]
+      }
+    },
+    {
+      "UNLINK": {
+        "path": "/9/8"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/7/7",
+        "name": "user.DW7JluSIioiThwmyBoZcsRbarZASei2QmfDW3PCat4VRnqV4KH1Yx5qekKLq0J4hQ2h5c4ObTMxCpfPVoRLr43ad7k4VY5kUi2JWTnR2SaXpgDxvaYlCpKpANiDR8F84KdupxpPIE6DJPeTm0zDLxWHsRwVdAPlyznFYyiHDgXn8nBMHw4wtOno9cNGWUHl4m6eeHioJ1Tj6WiXbxo8YbCKxefS0fhshVUSec4qAbniZyAJhrFTZNsKLtp",
+        "src_offset": 32768,
+        "size": 16
+      }
+    },
+    {
+      "UNLINK": {
+        "path": "/7/7"
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 4,
+        "src_offset": 1,
+        "size": 100,
+        "offset": 100
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7/8/7",
+        "mode": [
+          "S_IWUSR",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/7",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "PREAD": {
+        "des": 4,
+        "size": 16,
+        "offset": 4096
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/7/8/4",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/7/8/7",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 5
+      }
+    },
+    {
+      "PREAD": {
+        "des": 4,
+        "size": 1000,
+        "offset": 128
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 3,
+        "offset": 64,
+        "whence": "SEEK_SET"
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 1,
+        "offset": -129,
+        "whence": "SEEK_SET"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/1/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    }
+  ]
+}
