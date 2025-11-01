@@ -1,0 +1,863 @@
+{
+  "ops": [
+    {
+      "CHMOD": {
+        "path": "/",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/2",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/2",
+        "name": "user.A0ElhLKBPVn9ZORaV35NZ9GFYgncDCYrTfNBB4sX2KOpcsjp3MHiT5YKp3cGT8fZrDvkKBOaDztLDdmia7aCvSTtbncPevgh8g9a1W0Zn68m5ccQumK9HPPME7",
+        "src_offset": 0,
+        "size": 64
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8",
+        "name": "user.sg8EnjF4GQ5IIVoXwLrZ1FnhJRc71WOizUiznCe3lABsyfjAVwXGUhJ30n0",
+        "src_offset": 1,
+        "size": 128
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 1
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/2",
+        "linkpath": "/8/8"
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/8/8",
+        "new_path": "/8/8"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/3",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/3",
+        "new_path": "/8"
+      }
+    },
+    {
+      "READ": {
+        "des": 1,
+        "size": 1024
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/8/8",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 2
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "REMOVE": {
+        "path": "/3"
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/2",
+        "new_path": "/8/8"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8",
+        "name": "user.F36kPHvnplI",
+        "src_offset": 512,
+        "size": 1
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/5",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/8/8",
+        "new_path": "/8"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/8/5",
+        "length": 256
+      }
+    },
+    {
+      "PREAD": {
+        "des": 2,
+        "size": 4096,
+        "offset": 1
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/2",
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/8",
+        "name": "user.F36kPHvnplI"
+      }
+    },
+    {
+      "REMOVEXATTR": {
+        "path": "/2",
+        "name": "user.A0ElhLKBPVn9ZORaV35NZ9GFYgncDCYrTfNBB4sX2KOpcsjp3MHiT5YKp3cGT8fZrDvkKBOaDztLDdmia7aCvSTtbncPevgh8g9a1W0Zn68m5ccQumK9HPPME7"
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "READ": {
+        "des": 2,
+        "size": 128
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8",
+        "new_path": "/2/7"
+      }
+    },
+    {
+      "FCHMODAT": {
+        "des": 2,
+        "path": "./8",
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/8",
+        "flags": [
+          "O_RDONLY",
+          "O_SYNC"
+        ],
+        "des": 3
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/2/7",
+        "length": 0
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/8/8/5",
+        "flags": [
+          "O_RDONLY",
+          "O_APPEND"
+        ],
+        "des": 4
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/8/8",
+        "linkpath": "/8/8"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/8/8",
+        "name": "user.A0ElhLKBPVn9ZORaV35NZ9GFYgncDCYrTfNBB4sX2KOpcsjp3MHiT5YKp3cGT8fZrDvkKBOaDztLDdmia7aCvSTtbncPevgh8g9a1W0Zn68m5ccQumK9HPPME7"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/8",
+        "name": "user.F36kPHvnplI"
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 4
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/2/7",
+        "length": 32
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 3,
+        "src_offset": 32,
+        "size": 65535,
+        "offset": 100000
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/8",
+        "name": "user.F36kPHvnplI"
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 65535,
+        "size": 100
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/2",
+        "name": "user.RqsMVV7Wjfa",
+        "src_offset": 32768,
+        "size": 1
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 3,
+        "length": 65535
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 3,
+        "length": 64
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/8",
+        "flags": [
+          "O_RDWR",
+          "O_APPEND",
+          "O_SYNC"
+        ],
+        "des": 5
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 5,
+        "length": 64
+      }
+    },
+    {
+      "FCHMODAT": {
+        "des": 2,
+        "path": "./5",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/8"
+      }
+    },
+    {
+      "HARDLINKAT": {
+        "old_des": 0,
+        "old_path": "/2/7",
+        "new_des": 2,
+        "new_path": "./8/5"
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/2/7",
+        "new_path": "/8/8/4"
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8/1",
+        "new_path": "/8/8/3"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/8",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 6
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/2/9",
+        "mode": [
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 5
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/2/7",
+        "flags": [
+          "O_RDWR",
+          "O_SYNC",
+          "O_CREAT"
+        ],
+        "des": 7
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/2/7",
+        "name": "user.F36kPHvnplI",
+        "src_offset": 65535,
+        "size": 16
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "PWRITE": {
+        "des": 3,
+        "src_offset": 256,
+        "size": 100000,
+        "offset": 127
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 2,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 7,
+        "length": 127
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 256,
+        "size": 65536
+      }
+    },
+    {
+      "FCHMODAT": {
+        "des": 6,
+        "path": "./8/5",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 3,
+        "length": 100000
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/2/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/2"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8/8/4",
+        "name": "user.U0C3Byjk2UFzU1h4SNb3yjY1vz6aO9rZtU0FgBKjCNSQZ4BGeJZlLtcbdvQnaISjUqnzbtwPvMyZD28LshEGdgJZNfFP2SABOi2Y1i6wvKVARR5VwCy4NH8KN7",
+        "src_offset": 100,
+        "size": 32
+      }
+    },
+    {
+      "PREAD": {
+        "des": 6,
+        "size": 0,
+        "offset": 100
+      }
+    },
+    {
+      "PREAD": {
+        "des": 7,
+        "size": 4096,
+        "offset": 512
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 2,
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 2,
+        "path": "./8/6",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8/1",
+        "new_path": "/8/8/8/6/6"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/8",
+        "name": "user.jS2RVEizC1CxYu4tjEH6KfQFr5pDRjAvCFYSw6yXGjLk20c3ZxxUfm8TlD04reTCU3DM8fMNzytOTHjFgvQgVQbNljWs0fq8YATZEGcySbvrSVfGtTsI9e6tAr",
+        "src_offset": 127,
+        "size": 64
+      }
+    },
+    {
+      "WRITE": {
+        "des": 3,
+        "src_offset": 32767,
+        "size": 256
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/8/6/5",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP"
+        ]
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 3,
+        "offset": 0,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/8/5",
+        "length": 128
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 2,
+        "path": "./8/6/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8/8/8/6/5",
+        "new_path": "/8"
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/8/8/4",
+        "mode": [
+          "S_IWUSR",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/8/8/4",
+        "new_path": "/8/8/6"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/2/8/5",
+        "name": "user.F36kPHvnplI"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/6/7",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/8/8/8/5"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/6/1/5",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/8/8/8/6/1/4",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMODAT": {
+        "des": 6,
+        "path": "./8/6",
+        "mode": [
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8/8/6/1/5",
+        "new_path": "/8/8/6/1/8"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/8/5",
+        "length": 1000
+      }
+    },
+    {
+      "FTRUNCATE": {
+        "des": 7,
+        "length": 100
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/2/8/6",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 2
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8/8/8/6/1/4/1",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/2/8/5",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 8
+      }
+    }
+  ]
+}

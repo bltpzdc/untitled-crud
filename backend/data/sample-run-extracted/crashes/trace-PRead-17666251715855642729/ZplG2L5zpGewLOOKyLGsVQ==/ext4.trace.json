@@ -1,0 +1,1339 @@
+{
+  "success_n": 53,
+  "failure_n": 47,
+  "rows": [
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 129,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 3,
+        "execution_time": 13,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 4,
+        "execution_time": 74,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 5,
+        "execution_time": 13,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SYMLINK",
+        "subcall": "symlink",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "LISTXATTR",
+        "return_code": 0,
+        "execution_time": 13,
+        "extra": {
+          "hash": 13646096770106105413,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "RENAME",
+        "return_code": 0,
+        "execution_time": 34,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            },
+            {
+              "owner": "new parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PWRITE",
+        "subcall": "pwrite",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "WRITE",
+        "return_code": 100,
+        "execution_time": 379,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIR",
+        "return_code": 0,
+        "execution_time": 165,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "TRUNCATE",
+        "subcall": "truncate",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "READ",
+        "subcall": "read",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "TRUNCATE",
+        "subcall": "truncate",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "WRITE",
+        "return_code": 128,
+        "execution_time": 180,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "OPEN",
+        "subcall": "open",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 94,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "SHRINK",
+        "return_code": 0,
+        "execution_time": 517,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "dir",
+              "atime": true,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 16,
+        "execution_time": 12,
+        "extra": {
+          "hash": 16494428437063957874,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": true,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LSEEK",
+        "subcall": "lseek",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SETXATTR",
+        "subcall": "setxattr",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "SYMLINK",
+        "return_code": 0,
+        "execution_time": 99,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PREAD",
+        "subcall": "pread",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PWRITE",
+        "subcall": "pwrite",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SETXATTR",
+        "subcall": "setxattr",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "WRITE",
+        "return_code": 64,
+        "execution_time": 236,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 6,
+        "execution_time": 48,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 6,
+        "execution_time": 32,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 18,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "RENAME",
+        "subcall": "rename",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PREAD",
+        "subcall": "pread",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 24,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 276,
+        "execution_time": 6,
+        "extra": {
+          "hash": 12156048918316690728,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": true,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 6,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 392,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 7,
+        "execution_time": 6,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 28,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 8,
+        "execution_time": 32,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 15,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 32,
+        "execution_time": 1,
+        "extra": {
+          "hash": 2300422195925671310,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PREAD",
+        "subcall": "pread",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 108,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "OPEN",
+        "subcall": "open",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 55,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "FTRUNCATE",
+        "subcall": "ftruncate",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 21,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "WRITE",
+        "return_code": 1000,
+        "execution_time": 111,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "CREATE",
+        "subcall": "creat",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LISTXATTR",
+        "subcall": "listxattr",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "CLOSE",
+        "subcall": "close",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 8,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 4,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "GETXATTR",
+        "return_code": 64,
+        "execution_time": 28,
+        "extra": {
+          "hash": 13532767989591798977,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "FTRUNCATE",
+        "subcall": "ftruncate",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 2392,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 11,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "CREATE",
+        "subcall": "creat",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "TRUNCATE",
+        "subcall": "truncate",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 239,
+        "execution_time": 16,
+        "extra": {
+          "hash": 1873913666579263196,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": true,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "OPEN",
+        "subcall": "open",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "READ",
+        "subcall": "read",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "LISTXATTR",
+        "return_code": 17,
+        "execution_time": 19,
+        "extra": {
+          "hash": 16482567789673903119,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "UNLINK",
+        "return_code": 0,
+        "execution_time": 81,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LSEEK",
+        "subcall": "lseek",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 22,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LISTXATTR",
+        "return_code": 0,
+        "execution_time": 8,
+        "extra": {
+          "hash": 13646096770106105413,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 9,
+        "execution_time": 42,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 6,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 4,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LSEEK",
+        "subcall": "lseek",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SETXATTR",
+        "subcall": "setxattr",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "WRITE",
+        "return_code": 100000,
+        "execution_time": 470,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "HARDLINK",
+        "subcall": "link",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PREAD",
+        "subcall": "pread",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SETXATTR",
+        "subcall": "setxattr",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 3,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SETXATTR",
+        "subcall": "setxattr",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 9,
+        "execution_time": 15,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 21,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "HARDLINK",
+        "subcall": "link",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PWRITE",
+        "subcall": "pwrite",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "REMOVE",
+        "subcall": "lstat",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 8,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "HARDLINK",
+        "subcall": "link",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 101424,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 86,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 27,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "OPEN",
+        "subcall": "open",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LSEEK",
+        "subcall": "lseek",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "CHMOD",
+        "subcall": "chmod",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "FSYNC",
+        "subcall": "fsync",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 11,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

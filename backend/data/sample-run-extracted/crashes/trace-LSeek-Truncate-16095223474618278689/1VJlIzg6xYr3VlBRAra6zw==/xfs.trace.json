@@ -1,0 +1,1576 @@
+{
+  "success_n": 79,
+  "failure_n": 21,
+  "rows": [
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 161,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 24,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 56,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 20,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 12,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 52,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 3,
+        "execution_time": 48,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 15,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 70,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "SYMLINK",
+        "subcall": "symlink",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIR",
+        "return_code": 0,
+        "execution_time": 64,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "RENAME",
+        "return_code": 0,
+        "execution_time": 8,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "new parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "RENAME",
+        "subcall": "rename",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 16,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "RENAME",
+        "subcall": "rename",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 3,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIR",
+        "return_code": 0,
+        "execution_time": 225,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 51,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PREAD",
+        "subcall": "pread",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 18,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 48,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 11,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "RENAME",
+        "return_code": 0,
+        "execution_time": 46,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            },
+            {
+              "owner": "new parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 9,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 14,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "UNLINK",
+        "return_code": 0,
+        "execution_time": 18,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "FTRUNCATE",
+        "subcall": "ftruncate",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 133,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 33,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 16,
+        "execution_time": 1,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 26,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 20,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 62,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LISTXATTR",
+        "return_code": 0,
+        "execution_time": 13,
+        "extra": {
+          "hash": 13646096770106105413,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "READ",
+        "subcall": "read",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 17,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 10,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "HARDLINK",
+        "subcall": "link",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 50,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 4,
+        "execution_time": 104,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 1041,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 11,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 5,
+        "execution_time": 8,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 23,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FTRUNCATE",
+        "return_code": 0,
+        "execution_time": 15,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 22,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "OPEN",
+        "return_code": 6,
+        "execution_time": 7,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 86,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 0,
+        "execution_time": 10,
+        "extra": {
+          "hash": 1873913666579263196,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": true,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 39,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 12,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 2,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 256,
+        "execution_time": 0,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "FTRUNCATE",
+        "subcall": "ftruncate",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "CLOSE",
+        "return_code": 0,
+        "execution_time": 7,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 33,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 269,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "CREATE",
+        "subcall": "creat",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "TRUNCATE",
+        "return_code": 0,
+        "execution_time": 66,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "READ",
+        "subcall": "read",
+        "return_code": -1,
+        "errno": 21,
+        "strerror": "Is a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 12,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 12,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIR",
+        "return_code": 0,
+        "execution_time": 335,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 13,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIRAT",
+        "return_code": 0,
+        "execution_time": 209,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 57,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "HARDLINK",
+        "return_code": 0,
+        "execution_time": 33,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            },
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "GETXATTR",
+        "subcall": "getxattr",
+        "return_code": -1,
+        "errno": 61,
+        "strerror": "No data available"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "WRITE",
+        "subcall": "write",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 12,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "RENAME",
+        "return_code": 0,
+        "execution_time": 48,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "old parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            },
+            {
+              "owner": "new parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 199,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 147,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "HARDLINK",
+        "subcall": "link",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 15,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 53,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "MKDIRAT",
+        "return_code": 0,
+        "execution_time": 63,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 3,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 67,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "REMOVE",
+        "subcall": "lstat",
+        "return_code": -1,
+        "errno": 2,
+        "strerror": "No such file or directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "UNLINK",
+        "return_code": 0,
+        "execution_time": 22,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 54,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "FCHMOD",
+        "return_code": 0,
+        "execution_time": 18,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "UNLINK",
+        "return_code": 0,
+        "execution_time": 28,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "SETXATTR",
+        "return_code": 0,
+        "execution_time": 39,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "UNLINK",
+        "return_code": 0,
+        "execution_time": 20,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "PWRITE",
+        "subcall": "pwrite",
+        "return_code": -1,
+        "errno": 9,
+        "strerror": "Bad file descriptor"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Failure": {
+        "operation": "MKDIR",
+        "subcall": "mkdir",
+        "return_code": -1,
+        "errno": 17,
+        "strerror": "File exists"
+      }
+    },
+    {
+      "Success": {
+        "operation": "FSYNC",
+        "return_code": 0,
+        "execution_time": 117,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 0,
+        "execution_time": 3,
+        "extra": {
+          "hash": 1873913666579263196,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "CHMOD",
+        "return_code": 0,
+        "execution_time": 16,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "OPEN",
+        "subcall": "open",
+        "return_code": -1,
+        "errno": 20,
+        "strerror": "Not a directory"
+      }
+    },
+    {
+      "Success": {
+        "operation": "PREAD",
+        "return_code": 0,
+        "execution_time": 1,
+        "extra": {
+          "hash": 1873913666579263196,
+          "timestamps": [
+            {
+              "owner": "file",
+              "atime": false,
+              "mtime": false,
+              "ctime": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "Success": {
+        "operation": "LSEEK",
+        "return_code": 64,
+        "execution_time": 1,
+        "extra": {
+          "hash": null,
+          "timestamps": []
+        }
+      }
+    },
+    {
+      "Failure": {
+        "operation": "LSEEK",
+        "subcall": "lseek",
+        "return_code": -1,
+        "errno": 22,
+        "strerror": "Invalid argument"
+      }
+    },
+    {
+      "Success": {
+        "operation": "CREATE",
+        "return_code": 4,
+        "execution_time": 99,
+        "extra": {
+          "hash": null,
+          "timestamps": [
+            {
+              "owner": "parent",
+              "atime": false,
+              "mtime": true,
+              "ctime": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,847 @@
+{
+  "ops": [
+    {
+      "OPEN": {
+        "path": "/",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_CREAT"
+        ],
+        "des": 1
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 1,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 0,
+        "path": "/4",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL",
+        "src_offset": 65536,
+        "size": 1
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL",
+        "src_offset": 256,
+        "size": 1
+      }
+    },
+    {
+      "REMOVEXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP"
+        ]
+      }
+    },
+    {
+      "READ": {
+        "des": 1,
+        "size": 4096
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/5",
+        "mode": [
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/9/5",
+        "mode": [
+          "S_IRUSR",
+          "S_IRGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 1
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 1
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/4",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "SYMLINK": {
+        "target": "/9/5",
+        "linkpath": "/9/8"
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/9/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9",
+        "new_path": "/9/5"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/9/5/8",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_CREAT"
+        ],
+        "des": 2
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 2
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/9/5/5",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 3
+      }
+    },
+    {
+      "PREAD": {
+        "des": 3,
+        "size": 127,
+        "offset": 100
+      }
+    },
+    {
+      "REMOVE": {
+        "path": "/9/5/8"
+      }
+    },
+    {
+      "FCHMODAT": {
+        "des": 0,
+        "path": "/4/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9/5/5",
+        "new_path": "/9/5"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/8/1",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 3,
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/5/5",
+        "new_path": "/9/2"
+      }
+    },
+    {
+      "RMDIR": {
+        "path": "/9/8"
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/9/5/7",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9/5/5",
+        "new_path": "/9/5/5"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/8",
+        "new_path": "/9/5/6"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/2",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "READ": {
+        "des": 3,
+        "size": 32
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9/8/1",
+        "new_path": "/9/5/5"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8",
+        "mode": [
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/9/5/5",
+        "length": 32768
+      }
+    },
+    {
+      "PREAD": {
+        "des": 3,
+        "size": 65535,
+        "offset": 1024
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/9/5/5"
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "REMOVE": {
+        "path": "/9/8"
+      }
+    },
+    {
+      "CLOSE": {
+        "des": 3
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4/7",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4/7/4",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4/1",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/9/5/5",
+        "length": 255
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4/7/4/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/4/7/4",
+        "mode": [
+          "S_IWGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4/1",
+        "length": 1000
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/5/7/3",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/3",
+        "mode": [
+          "S_IWGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/5/5",
+        "new_path": "/9/6"
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/5/6",
+        "new_path": "/9/5/7/7"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9/5",
+        "name": "user.CZPlp6dbURA98XedfPn0iODoZ8crlt3Yo6rMKPvgdAlPy3S4uIXQHhobit8hizqFvVSqH09wQT0yQxtFzqy2ZfZTowKLRet",
+        "src_offset": 65535,
+        "size": 127
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/8",
+        "new_path": "/9/5/5/5"
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9/5/5/5",
+        "new_path": "/9/5/7/7"
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/9/5/5/5",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/5/7/7",
+        "new_path": "/4/7/2"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9/5",
+        "name": "user.GYTMHkapcdI1qpNdVb29uPxZSyU",
+        "src_offset": 0,
+        "size": 127
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4/7/9",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP"
+        ]
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9/5",
+        "name": "user.CZPlp6dbURA98XedfPn0iODoZ8crlt3Yo6rMKPvgdAlPy3S4uIXQHhobit8hizqFvVSqH09wQT0yQxtFzqy2ZfZTowKLRet"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4/7/9",
+        "length": 4096
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/5/7/9",
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4/5",
+        "mode": [
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9",
+        "name": "user.aFOJe6D99ASSUuuees0TqFMeqjL",
+        "src_offset": 100000,
+        "size": 32
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4/1/8",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/9/5"
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/9/3",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "GETXATTR": {
+        "path": "/9/5/5",
+        "name": "user.GYTMHkapcdI1qpNdVb29uPxZSyU"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/9/5/7/9",
+        "length": 100
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/4/1",
+        "flags": [
+          "O_RDONLY"
+        ],
+        "des": 4
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/5",
+        "new_path": "/9/5/5/4"
+      }
+    },
+    {
+      "MKDIR": {
+        "path": "/4/1/8/2",
+        "mode": [
+          "S_IWUSR",
+          "S_IWGRP",
+          "S_IROTH",
+          "S_IWOTH"
+        ]
+      }
+    },
+    {
+      "LISTXATTR": {
+        "path": "/9/5"
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4/7/9",
+        "length": 65535
+      }
+    },
+    {
+      "CHMOD": {
+        "path": "/9/5/7/7",
+        "mode": [
+          "S_IRUSR",
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 4,
+        "mode": [
+          "S_IRUSR",
+          "S_IXGRP",
+          "S_IWOTH",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "WRITE": {
+        "des": 4,
+        "src_offset": 512,
+        "size": 512
+      }
+    },
+    {
+      "RENAME": {
+        "old_path": "/9/5/7",
+        "new_path": "/4/7/2"
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/9/5",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY",
+          "O_EXCL"
+        ],
+        "des": 5
+      }
+    },
+    {
+      "FSYNC": {
+        "des": 4
+      }
+    },
+    {
+      "TRUNCATE": {
+        "path": "/4/5",
+        "length": 64
+      }
+    },
+    {
+      "CREATE": {
+        "path": "/4/1/8/3",
+        "mode": [
+          "S_IWUSR",
+          "S_IRGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "READ": {
+        "des": 5,
+        "size": 65535
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/4/1/8/3",
+        "new_path": "/4/7/4/6"
+      }
+    },
+    {
+      "LSEEK": {
+        "des": 4,
+        "offset": -100000,
+        "whence": "SEEK_END"
+      }
+    },
+    {
+      "SETXATTR": {
+        "path": "/9/5",
+        "name": "user.GYTMHkapcdI1qpNdVb29uPxZSyU",
+        "src_offset": 128,
+        "size": 100
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 4,
+        "mode": [
+          "S_IWUSR",
+          "S_IXUSR",
+          "S_IXGRP",
+          "S_IXOTH"
+        ]
+      }
+    },
+    {
+      "FCHMOD": {
+        "des": 4,
+        "mode": [
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IROTH"
+        ]
+      }
+    },
+    {
+      "OPEN": {
+        "path": "/9/5/5",
+        "flags": [
+          "O_RDONLY",
+          "O_DIRECTORY"
+        ],
+        "des": 6
+      }
+    },
+    {
+      "HARDLINK": {
+        "old_path": "/9/6",
+        "new_path": "/4/1/8/2/7"
+      }
+    },
+    {
+      "MKDIRAT": {
+        "des": 5,
+        "path": "./5/4",
+        "mode": [
+          "S_IRUSR",
+          "S_IXUSR",
+          "S_IRGRP",
+          "S_IWGRP",
+          "S_IXGRP",
+          "S_IROTH"
+        ]
+      }
+    }
+  ]
+}
