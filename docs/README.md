@@ -1,9 +1,8 @@
-# Предварительная структура (TODO)
+# База знаний
 
-```
-docs/
-├── index.md
-├── api/
-├── deployment/
-└── development/
-```
+
+## Оглавление
+
+- [Требования](./requirements/requirements.md)
+- [Описание анализатора](./diffuzzer-overview.md)
+- [Описание первого прототипа](./first-prototype.md)
