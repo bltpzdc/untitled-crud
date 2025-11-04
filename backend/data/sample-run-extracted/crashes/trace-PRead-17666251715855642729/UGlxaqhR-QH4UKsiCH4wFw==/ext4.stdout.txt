@@ -1,7 +1,0 @@
-:: init workspace at '/mnt/ext4/fstest'
-:: read test input at '/tmp/diffuzzer-remote-vault/test.json'
-:: init test executor
-:: run test
-==> #SUCCESS: 70 | #FAILURE: 30
-:: save trace
-==> trace saved at '/tmp/diffuzzer-remote-vault/execution-vault/trace.json'
