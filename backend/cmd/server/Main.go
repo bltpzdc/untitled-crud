@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler := api.NewWhiteHandler(whiteService)
+	handler := api.NewWhiteHandler(*whiteService)
 
 	router.POST("/execution", handler.PostExecutionHandler)
 	router.GET("/executions", handler.GetExecutionsHandler)

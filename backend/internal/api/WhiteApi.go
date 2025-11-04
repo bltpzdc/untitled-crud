@@ -62,33 +62,25 @@ func (h *WhiteHandler) GetExecutionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, executions)
 }
 
-type loadExecutionRequest struct {
-	Id int `json:"id"`
-}
-
 func (h *WhiteHandler) PostExecutionHandler(c *gin.Context) {
-	var req loadExecutionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
-		return
-	}
-
-	execution, err := h.whiteService.GetExecution(req.Id)
+	file, err := c.FormFile("archive")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to load execution: %v", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to get archive file: %v", err)})
 		return
 	}
 
-	if execution == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Execution not found"})
+	tempFilePath := fmt.Sprintf("/tmp/%s", file.Filename)
+	if err := c.SaveUploadedFile(file, tempFilePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save uploaded file: %v", err)})
 		return
 	}
+	defer os.Remove(tempFilePath)
 
-	err = h.whiteService.UnloadExecution(req.Id)
+	executionID, err := h.whiteService.StoreExecution(tempFilePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to unload execution: %v", err)})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to store execution: %v", err)})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Execution unloaded successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Execution stored successfully", "id": executionID})
 }
