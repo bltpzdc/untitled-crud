@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/metametamoon/untitled-crud/backend/internal/service"
+	"internal/service"
 )
 
 type WhiteHandler struct {
@@ -95,16 +95,16 @@ func (h *WhiteHandler) PostExecutionHandler(c *gin.Context) {
 
 // DB related api
 
-type FuzzerHandler struct {
-    service *service.FuzzerService
+type FuzzTraceHandler struct {
+    service *service.FuzzTraceService
 }
 
-func NewFuzzerHandler(service *service.FuzzerService) *FuzzerHandler {
-    return &FuzzerHandler{service: service}
+func NewFuzzTraceHandler(service *service.FuzzTraceService) *FuzzTraceHandler {
+    return &FuzzTraceHandler{service: service}
 }
 
-func (h *FuzzerHandler) PostFuzzerRun(c *gin.Context) {
-    var request service.FuzzerResult
+func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
+    var request model.FuzzerRun
 
     if err := c.ShouldBindJSON(&request); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -119,7 +119,7 @@ func (h *FuzzerHandler) PostFuzzerRun(c *gin.Context) {
     c.JSON(http.StatusCreated, gin.H{"status": "success"})
 }
 
-func (h *FuzzerHandler) GetFuzzerRun(c *gin.Context) {
+func (h *FuzzTraceHandler) GetFuzzerRun(c *gin.Context) {
     runID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
@@ -135,27 +135,8 @@ func (h *FuzzerHandler) GetFuzzerRun(c *gin.Context) {
     c.JSON(http.StatusOK, run)
 }
 
-func (h *FuzzerHandler) GetFuzzerRuns(c *gin.Context) {
-	limitStr := c.DefaultQuery("limit", "25")
-	limit, err := strconv.Atoi(c.Param("limit"))
-	if err != nil || limit < 10 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
-        return
-    }
-	if limit > 50 {
-        limit = 50
-    }
-
-	offsetStr := s.DefaultQuery("offset", "0")
-	offset, err := strconv.Atoi(c.Param("offset"))
-	if err != nil || offset < 0 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset"})
-        return
-    }
-
-	// TODO: parse date parameters also
-
-    runs, err := h.service.GetRuns(c.Request.Context(), limit, offset)
+func (h *FuzzTraceHandler) GetFuzzerRuns(c *gin.Context) {
+    runs, err := h.service.GetRuns(c.Request.Context())
     if err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Runs not found"})
         return
@@ -164,14 +145,12 @@ func (h *FuzzerHandler) GetFuzzerRuns(c *gin.Context) {
     c.JSON(http.StatusOK, runs)
 }
 
-func (h *FuzzerHandler) GetRunsByTag(c *gin.Context) {
-    tagName := c.Param("tag")
-    
-    runs, err := h.service.GetRunsByTag(c.Request.Context(), tagName)
+func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
+    tags, err := h.service.GetAllTags(c.Request.Context())
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        c.JSON(http.StatusNotFound, gin.H{"error": "Runs not found"})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"tag": tagName, "runs": runs})
+    c.JSON(http.StatusOK, tags)
 }

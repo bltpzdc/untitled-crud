@@ -3,32 +3,66 @@ package repository
 import (
     "context"
     "fmt"
+    "encoding/json"
+    "github.com/jackc/pgx/v5"
 
     "model"
-
-    "github.com/jackc/pgx/v5"
 )
 
-type FuzzerRepository struct {
+type FuzzTraceRepository struct {
     db *pgx.Conn
+    artifactsPath string
 }
 
-func NewFuzzerRepository(db *pgx.Conn) *FuzzerRepository {
-    return &FuzzerRepository{db: db}
+func NewFuzzTraceRepository(db *pgx.Conn, artifactsPath string) *FuzzTraceRepository {
+    return &FuzzTraceRepository{
+        db: db,
+        artifactsPath: artifactsPath,
+    }
 }
 
-func (r *FuzzerRepository) StoreRun(ctx context.Context, run *model.FuzzerRun) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO fuzzer_runs (timestamp, failure_count)
-        VALUES ($1, $2)
-        RETURNING id
-    `, run.Timestamp, run.FailureCount).Scan(&run.ID)
+func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun) error {
+    var runID int
     
-    return err
+    // trying to find run
+    if run.ID != 0 {
+        err := r.db.QueryRow(ctx,
+            "SELECT id FROM fuzzer_runs WHERE id = $1",
+            run.ID,
+        ).Scan(&runID)
+        
+        if err != nil && err != pgx.ErrNoRows {
+            return err
+        }
+    }
+
+    if runID == 0 {
+        // didn't find the run -> create new
+        err := r.db.QueryRow(ctx,
+            `INSERT INTO fuzzer_runs (timestamp, failure_count) 
+             VALUES ($1, $2) RETURNING id`,
+            run.Timestamp, run.FailureCount,
+        ).Scan(&runID)
+        if err != nil {
+            return err
+        }
+    }
+
+    if err := r.saveRunHierarchy(ctx, runID, run); err != nil {
+        return err
+    }
+
+    if err := r.addRunTags(ctx, runID, run.Tags); err != nil {
+        return err
+    }
+
+    run.ID = runID
 }
 
-func (r *FuzzerRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
+func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
     var run model.FuzzerRun
+
+    // get requested run
     err := r.db.QueryRow(ctx, `
         SELECT id, timestamp, failure_count
         FROM fuzzer_runs WHERE id = $1
@@ -38,255 +72,293 @@ func (r *FuzzerRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun
         return nil, err
     }
 
+    // get related tags
+    tags, err := r.getRunTags(ctx, run.ID)
+    if err != nil {
+        return nil, err
+    }
+    run.Tags = tags
+
+    // get related crashes
+    opCrashes, err := r.getRunOpCrashes(ctx, run.ID)
+    if err != nil {
+        return nil, err
+    }
+    run.OpCrashes = opCrashes
+
     return &run, nil
 }
 
-func (r *FuzzerRepository) GetRuns(ctx context.Context, limit, offset int) ([]model.FuzzerRun, error) {
-    rows, err := r.db.Query(ctx, `
-        SELECT id, timestamp, failure_count
-        FROM fuzzer_runs 
-        ORDER BY timestamp DESC
-        LIMIT $1 OFFSET $2
-    `, limit, offset)
-    
+func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {
+    rows, err := r.conn.Query(ctx,
+        "SELECT id, timestamp, failure_count FROM fuzzer_runs ORDER BY timestamp DESC",
+    )
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-
-    var runs []model.FuzzerRun
+    
+    var runs []domain.model.FuzzerRun
+    
     for rows.Next() {
-        var run model.FuzzerRun
+        var run domain.model.FuzzerRun
         err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
         if err != nil {
             return nil, err
         }
+        
+        tags, err := r.getRunTags(ctx, run.ID)
+        if err != nil {
+            return nil, err
+        }
+        run.Tags = tags
+        
+        opCrashes, err := r.getRunOpCrashes(ctx, run.ID)
+        if err != nil {
+            return nil, err
+        }
+        run.OpCrashes = opCrashes
+        
         runs = append(runs, run)
     }
     
     return runs, nil
 }
 
-func (r *FuzzerRepository) GetOrStoreTag(ctx context.Context, name string) (*model.Tag, error) {
-    var tag model.Tag
-    
-    err := r.db.QueryRow(ctx, `
-        SELECT id, name FROM tags WHERE name = $1
-    `, name).Scan(&tag.ID, &tag.Name)
-    
-    if err != nil {
-        err = r.db.QueryRow(ctx, `
-            INSERT INTO tags (name) VALUES ($1) RETURNING id
-        `, name).Scan(&tag.ID)
-        if err != nil {
-            return nil, fmt.Errorf("failed to store tag: %w", err)
-        }
-        tag.Name = name
-    }
-    
-    return &tag, nil
-}
-
-func (r *FuzzerRepository) AddTagToRun(ctx context.Context, runID int, tagName string) error {
-    tag, err := r.GetOrCreateTag(ctx, tagName)
-    if err != nil {
-        return err
-    }
-
-    _, err = r.db.Exec(ctx, `
-        INSERT INTO run_tags (run_id, tag_id)
-        VALUES ($1, $2)
-        ON CONFLICT (run_id, tag_id) DO NOTHING
-    `, runID, tag.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) GetRunTags(ctx context.Context, runID int) ([]string, error) {
-    rows, err := r.db.Query(ctx, `
-        SELECT t.name
-        FROM tags t
-        JOIN run_tags rt ON t.id = rt.tag_id
-        WHERE rt.run_id = $1
-        ORDER BY t.name
-    `, runID)
-    
+func (r *PostgresRepository) GetAllTags(ctx context.Context) ([]model.Tag, error) {
+    rows, err := r.db.Query(ctx, "SELECT id, name FROM tags ORDER BY name")
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-
-    var tags []string
+    
+    var tags []model.Tag
     for rows.Next() {
-        var tagName string
-        err := rows.Scan(&tagName)
-        if err != nil {
+        var tag model.Tag
+        if err := rows.Scan(&tag.ID, &tag.Name); err != nil {
             return nil, err
         }
-        tags = append(tags, tagName)
+        tags = append(tags, tag)
     }
     
     return tags, nil
 }
 
-func (r *FuzzerRepository) GetRunsByTag(ctx context.Context, tagName string) ([]model.FuzzerRun, error) {
-    rows, err := r.db.Query(ctx, `
-        SELECT fr.id, fr.timestamp, fr.failure_count
-        FROM fuzzer_runs fr
-        JOIN run_tags rt ON fr.id = rt.run_id
-        JOIN tags t ON rt.tag_id = t.id
-        WHERE t.name = $1
-        ORDER BY fr.timestamp DESC
-    `, tagName)
+// private functions
+
+func (r *PostgresRepository) saveRunHierarchy(ctx context.Context, runID int, run *model.FuzzerRun) error {
+    // save crashes info
+    for i := range run.OpCrashes {
+        opCrash := &run.OpCrashes[i]
+        opCrash.RunID = runID
+        
+        err := r.db.QueryRow(ctx,
+            `INSERT INTO op_crashes (run_id, operation) 
+             VALUES ($1, $2) RETURNING id`,
+            opCrash.RunID, opCrash.Operation,
+        ).Scan(&opCrash.ID)
+        if err != nil {
+            return err
+        }
+        
+        // save tests related to crash operation-error code
+        for j := range opCrash.TestCases {
+            testCase := &opCrash.TestCases[j]
+            testCase.CrashID = opCrash.ID
+            
+            testJSON, _ := json.Marshal(testCase.Test)
+            diffJSON, _ := json.Marshal(testCase.DiffData)
+            
+            err := r.db.QueryRow(ctx,
+                `INSERT INTO test_cases (crash_id, total_operations, test_seq, diff) 
+                 VALUES ($1, $2, $3, $4) RETURNING id`,
+                testCase.CrashID, testCase.TotalOperations, testJSON, diffJSON,
+            ).Scan(&testCase.ID)
+            if err != nil {
+                return err
+            }
+            
+            // save summary related to certain FS
+            for k := range testCase.FSSummaries {
+                fsSummary := &testCase.FSSummaries[k]
+                fsSummary.TestCaseID = testCase.ID
+                
+                err := r.db.QueryRow(ctx,
+                    `INSERT INTO fs_test_summaries (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time) 
+                     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                    fsSummary.TestCaseID, fsSummary.FSName, fsSummary.FSSuccessCount, 
+                    fsSummary.FSFailureCount, fsSummary.FSExecutionTime,
+                ).Scan(&fsSummary.ID)
+                if err != nil {
+                    return err
+                }
+            }
+        }
+    }
     
+    return nil
+}
+
+func (r *PostgresRepository) getRunOpCrashes(ctx context.Context, runID int) ([]model.OpCrash, error) {
+    rows, err := r.db.Query(ctx,
+        "SELECT id, operation FROM op_crashes WHERE run_id = $1",
+        runID,
+    )
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-
-    var runs []model.FuzzerRun
+    
+    var opCrashes []model.OpCrash
     for rows.Next() {
-        var run model.FuzzerRun
-        err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
+        var opCrash model.OpCrash
+        if err := rows.Scan(&opCrash.ID, &opCrash.Operation); err != nil {
+            return nil, err
+        }
+        
+        // get related tests
+        testCases, err := r.getOpCrashTestCases(ctx, opCrash.ID)
         if err != nil {
             return nil, err
         }
-        runs = append(runs, run)
+        opCrash.TestCases = testCases
+        
+        opCrashes = append(opCrashes, opCrash)
     }
     
-    return runs, nil
+    return opCrashes, nil
 }
 
-func (r *FuzzerRepository) StoreCrash(ctx context.Context, crash *model.OpCrash) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO op_crashes (run_id, dir_name, operation)
-        VALUES ($1, $2, $3)
-        RETURNING id
-    `, crash.RunID, crash.DirName, crash.Operation).Scan(&crash.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) StoreTestCase(ctx context.Context, testCase *model.TestCase) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO test_cases (crash_id, dir_name, total_operations)
-        VALUES ($1, $2, $3)
-        RETURNING id
-    `, testCase.CrashID, testCase.DirName, testCase.TotalOperations).Scan(&testCase.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) StoreFsSummary(ctx context.Context, summary *model.FsTestSummary) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO fs_test_summaries 
-        (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-    `, summary.TestCaseID, summary.FsName, summary.FsSuccessCount, 
-        summary.FsFailureCount, summary.FsExecutionTime).Scan(&summary.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) StoreTestArtifact(ctx context.Context, artifact *model.TestArtifact) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO test_artifacts (test_case_id, test_ops_seq, reason, metadata)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id
-    `, artifact.TestCaseID, artifact.TestOpsSeq, artifact.Reason, artifact.Metadata).Scan(&artifact.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) StoreFsArtifact(ctx context.Context, artifact *model.FsArtifact) error {
-    err := r.db.QueryRow(ctx, `
-        INSERT INTO fs_artifacts 
-        (test_artifacts_id, fs_name, fs_stderr, fs_stdout, fs_trace)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-    `, artifact.TestArtifactsID, artifact.FsName, artifact.FsStderr, 
-        artifact.FsStdout, artifact.FsTrace).Scan(&artifact.ID)
-    
-    return err
-}
-
-func (r *FuzzerRepository) GetRunWithDetails(ctx context.Context, runID int) (*repository.RunDetails, error) {
-	run, err := r.GetRun(ctx, runID)
-    if err != nil {
-        return nil, err
-    }
-
-    tags, err := r.GetRunTags(ctx, runID)
-    if err != nil {
-        return nil, err
-    }
-
-    rows, err := r.db.Query(ctx, `
-        SELECT id, run_id, dir_name, operation 
-        FROM op_crashes WHERE run_id = $1
-    `, runID)
+func (r *PostgresRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]model.TestCase, error) {
+    rows, err := r.db.Query(ctx,
+        "SELECT id, total_operations, test_seq, diff FROM test_cases WHERE crash_id = $1",
+        crashID,
+    )
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-
-    var crashes []model.OpCrash
+    
+    var testCases []model.TestCase
     for rows.Next() {
-        var crash model.OpCrash
-        if err := rows.Scan(&crash.ID, &crash.RunID, &crash.DirName, &crash.Operation); err != nil {
+        var testCase model.TestCase
+        var testJSON, diffJSON []byte
+        
+        if err := rows.Scan(&testCase.ID, &testCase.TotalOperations, &testJSON, &diffJSON); err != nil {
             return nil, err
         }
-        crashes = append(crashes, crash)
+        
+        json.Unmarshal(testJSON, &testCase.Test)
+        json.Unmarshal(diffJSON, &testCase.DiffData)
+        
+        // get related summaries
+        fsSummaries, err := r.getTestCaseFSSummaries(ctx, testCase.ID)
+        if err != nil {
+            return nil, err
+        }
+        testCase.FSSummaries = fsSummaries
+        
+        testCases = append(testCases, testCase)
     }
-
-    return &repository.RunDetails{
-        Run:     run,
-        Tags:    tags,
-        Crashes: crashes,
-    }, nil
+    
+    return testCases, nil
 }
 
-func (r *FuzzerRepository) GetRunStats(ctx context.Context) ([]RunStats, error) {}
-
-func (r *FuzzerRepository) GetRunsFilteredByDate(ctx context.Context, filter repository.RunDateFilter) ([]model.FuzzerRun, error) {
-    query := `
-        SELECT id, timestamp, failure_count
-        FROM fuzzer_runs 
-        WHERE 1=1
-    `
-    args := []interface{}{}
-    argPos := 1
-
-    if !filter.StartDate.IsZero() {
-        query += fmt.Sprintf(" AND timestamp >= $%d", argPos)
-        args = append(args, filter.StartDate)
-        argPos++
-    }
-
-    if !filter.EndDate.IsZero() {
-        query += fmt.Sprintf(" AND timestamp <= $%d", argPos)
-        args = append(args, filter.EndDate)
-        argPos++
-    }
-
-    query += " ORDER BY timestamp DESC"
-
-    rows, err := r.db.Query(ctx, query, args...)
+func (r *PostgresRepository) getTestCaseFSSummaries(ctx context.Context, testCaseID int) ([]model.FsTestSummary, error) {
+    rows, err := r.db.Query(ctx,
+        "SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time FROM fs_test_summaries WHERE test_case_id = $1",
+        testCaseID,
+    )
     if err != nil {
-        return nil, fmt.Errorf("failed to query runs: %w", err)
+        return nil, err
     }
     defer rows.Close()
-
-    var runs []model.FuzzerRun
+    
+    var fsSummaries []model.FsTestSummary
     for rows.Next() {
-        var run model.FuzzerRun
-        err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
-        if err != nil {
-            return nil, fmt.Errorf("failed to scan run: %w", err)
+        var fsSummary model.FsTestSummary
+        if err := rows.Scan(&fsSummary.ID, &fsSummary.FSName, &fsSummary.FSSuccessCount, 
+            &fsSummary.FSFailureCount, &fsSummary.FSExecutionTime); err != nil {
+            return nil, err
         }
-        runs = append(runs, run)
+        fsSummaries = append(fsSummaries, fsSummary)
+    }
+    
+    return fsSummaries, nil
+}
+
+func (r *PostgresRepository) getRunTags(ctx context.Context, runID int) ([]string, error) {
+    rows, err := r.db.Query(ctx,
+        "SELECT t.name FROM tags t JOIN run_tags rt ON t.id = rt.tag_id WHERE rt.run_id = $1",
+        runID,
+    )
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+    
+    var tags []string
+    for rows.Next() {
+        var tag string
+        if err := rows.Scan(&tag); err != nil {
+            return nil, err
+        }
+        tags = append(tags, tag)
+    }
+    
+    return tags, nil
+}
+
+func (r *PostgresRepository) addRunTags(ctx context.Context, runID int, tagNames []string) error {
+    currentTags, err := r.getRunTags(ctx, runID)
+    if err != nil {
+        return err
     }
 
-    return runs, nil
+    // structs for comparision
+    currentTagSet := make(map[string]bool)
+    for _, tag := range currentTags {
+        currentTagSet[tag] = true
+    }
+    newTagSet := make(map[string]bool)
+    for _, tag := range tagNames {
+        newTagSet[tag] = true
+    }
+
+    // add unexisting tags
+    for _, tagName := range tagNames {
+        if !currentTagSet[tagName] {
+            var tagID int
+            err := r.db.QueryRow(ctx,
+                "INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id",
+                tagName,
+            ).Scan(&tagID)
+            
+            if err != nil {
+                return err
+            }
+            
+            _, err = r.db.Exec(ctx,
+                "INSERT INTO run_tags (run_id, tag_id) VALUES ($1, $2) ON CONFLICT (run_id, tag_id) DO NOTHING",
+                runID, tagID,
+            )
+            if err != nil {
+                return err
+            }
+        }
+    }
+
+    // delete tags
+    for _, currentTag := range currentTags {
+        if !newTagSet[currentTag] {
+            _, err := r.db.Exec(ctx,
+                "DELETE FROM run_tags WHERE run_id = $1 AND tag_id = (SELECT id FROM tags WHERE name = $2)",
+                runID, currentTag,
+            )
+            if err != nil {
+                return err
+            }
+        }
+    }
+    return nil
 }
