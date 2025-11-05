@@ -42,8 +42,30 @@ function a11yProps(index) {
 // TODO(savikin): it's repeated in SideMenu, merge
 const drawerWidth = 480;
 
+const hardcoded_reason = [
+  {"Failure":{"operation":"LSEEK","subcall":"lseek","return_code":-1,"errno":22,"strerror":"Invalid argument"}},
+  {"Success":{"operation":"LSEEK","return_code":1024,"execution_time":0,"extra":{"hash":null,"timestamps":[]}}}
+]
+
+const runs = [
+  { 
+    datatype: "run",
+    text: 'Испытание 1',
+    run_time: new Date(),
+  },
+  { 
+    datatype: "bug",
+    text: 'Баг 1',
+    reason: hardcoded_reason,
+  },
+]
+
 export default function MainMenu() {
-  let value = 0;
+  const [value, setValue] = React.useState(0);
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -53,23 +75,27 @@ export default function MainMenu() {
         }}>
         <Tabs
           value={value}
+          onChange={handleChange}
           textColor="inherit"
           variant="fullWidth"
         >
-          <Tab label="Item One" {...a11yProps(0)} />
-          <Tab label="Item Two" {...a11yProps(1)} />
-          <Tab label="Item Three" {...a11yProps(2)} />
+          {runs.map((item, index) => (
+            <Tab label={item.text} {...a11yProps(index)} />
+          ))}
         </Tabs>
       </AppBar>
-      <TabPanel value={value} index={0}>
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-        Item Two
-      </TabPanel>
-      <TabPanel value={value} index={2}>
-        Item Three
-      </TabPanel>
+      {/* Toolbar is here to fix some collision issues,
+       in accordance to something i have seen once somewhere in the docs
+       hence: might be neither needed nor harmless*/}
       <Toolbar/>
+
+      {runs.map((item, index) => (
+        <TabPanel value={value} index={index}>
+          {
+            (item.datatype == 'run') ?  () : (JSON.stringify(item.reason))
+          }
+        </TabPanel>
+      ))}
     </Box>
   );
 }
