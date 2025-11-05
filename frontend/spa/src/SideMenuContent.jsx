@@ -30,7 +30,7 @@ export default function SideMenuContent() {
       <List>
         {sidepanel_runs.map((item, index) => (
           <ListItem key={index}>
-            <ListItemButton selected={index === 0}>
+            <ListItemButton >
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
