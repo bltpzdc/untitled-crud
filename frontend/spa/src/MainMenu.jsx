@@ -38,18 +38,23 @@ function a11yProps(index) {
   };
 }
 
+
+// TODO(savikin): it's repeated in SideMenu, merge
+const drawerWidth = 480;
+
 export default function MainMenu() {
   let value = 0;
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed">
+      <AppBar position="fixed" sx={{
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+        }}>
         <Tabs
           value={value}
-          indicatorColor="secondary"
           textColor="inherit"
           variant="fullWidth"
-          aria-label="full width tabs example"
         >
           <Tab label="Item One" {...a11yProps(0)} />
           <Tab label="Item Two" {...a11yProps(1)} />
@@ -64,7 +69,6 @@ export default function MainMenu() {
       <TabPanel value={value} index={2}>
         Item Three
       </TabPanel>
-
       <Toolbar/>
     </Box>
   );
