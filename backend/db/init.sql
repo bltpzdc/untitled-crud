@@ -19,15 +19,15 @@ CREATE TABLE run_tags (
 CREATE TABLE op_crashes (
     id SERIAL PRIMARY KEY,
     run_id INTEGER NOT NULL REFERENCES fuzzer_runs(id) ON DELETE CASCADE,
-    dir_name VARCHAR(100) NOT NULL,
     operation VARCHAR(20) NOT NULL
 );
 
 CREATE TABLE test_cases (
     id SERIAL PRIMARY KEY,
     crash_id INTEGER NOT NULL REFERENCES op_crashes(id) ON DELETE CASCADE,
-    dir_name VARCHAR(100) NOT NULL,
-    total_operations INTEGER NOT NULL DEFAULT 0
+    total_operations INTEGER NOT NULL DEFAULT 0,
+    test JSONB,
+    diff JSONB
 );
 
 CREATE TABLE fs_test_summaries (
@@ -38,24 +38,6 @@ CREATE TABLE fs_test_summaries (
     fs_failure_count INTEGER NOT NULL DEFAULT 0,
     fs_execution_time INTERVAL
 );
-
-CREATE TABLE test_artifacts (
-    id SERIAL PRIMARY KEY,
-    test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
-    test_ops_seq JSONB NOT NULL DEFAULT '[]',
-    reason TEXT,
-    metadata JSONB DEFAULT '{}'
-);
-
-CREATE TABLE fs_artifacts (
-    id SERIAL PRIMARY KEY,
-    test_artifacts_id INTEGER NOT NULL REFERENCES test_artifacts(id) ON DELETE CASCADE,
-    fs_name VARCHAR(10) NOT NULL,
-    fs_stderr TEXT,
-    fs_stdout TEXT,
-    fs_trace JSONB
-);
-
 
 CREATE INDEX idx_tags_name ON tags(name);
 CREATE INDEX idx_run_tags_run_id ON run_tags(run_id);

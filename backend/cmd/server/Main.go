@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
-	"api"
-	"db"
-	"model"
-	"repository"
-	"service"
+
+	"github.com/metametamoon/untitled-crud/backend/db"
+	"github.com/metametamoon/untitled-crud/backend/internal/api"
+	"github.com/metametamoon/untitled-crud/backend/internal/repository"
+	"github.com/metametamoon/untitled-crud/backend/internal/service"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -28,9 +29,9 @@ func main() {
     }
     defer conn.Release()
 
-    fuzzerRepo := postgres.NewFuzzerRepository(conn.Conn())
-    fuzzerService := service.NewFuzzerService(fuzzerRepo)
-    fuzzerHandler := handler.NewFuzzerHandler(fuzzerService)
+    fuzzTraceRepo := repository.NewFuzzTraceRepository(conn.Conn())
+    fuzzTraceService := service.NewFuzzTraceService(fuzzTraceRepo)
+    fuzzTraceHandler := api.NewFuzzTraceHandler(fuzzTraceService)
 
 	router := gin.Default()
 
@@ -39,9 +40,9 @@ func main() {
 
 	router.Static("/docs", "./docs")
 
-	router.POST("/run", fuzzerHandler.PostFuzzerRun)
-	router.GET("/runs", fuzzerHandler.GetExecutionsHandler)
-	router.GET("/run/:id", fuzzerHandler.GetFuzzerRun)
+	router.POST("/run", fuzzTraceHandler.PostFuzzerRun)
+	router.GET("/runs", fuzzTraceHandler.GetFuzzerRuns)
+	router.GET("/run/:id", fuzzTraceHandler.GetFuzzerRun)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := router.Run(":8080"); err != nil {
