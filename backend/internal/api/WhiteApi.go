@@ -95,15 +95,15 @@ func (h *WhiteHandler) PostExecutionHandler(c *gin.Context) {
 
 // DB related api
 
-type FuzzerHandler struct {
-    service *service.FuzzerService
+type FuzzTraceHandler struct {
+    service *service.FuzzTraceService
 }
 
-func NewFuzzerHandler(service *service.FuzzerService) *FuzzerHandler {
-    return &FuzzerHandler{service: service}
+func NewFuzzTraceHandler(service *service.FuzzTraceService) *FuzzTraceHandler {
+    return &FuzzTraceHandler{service: service}
 }
 
-func (h *FuzzerHandler) PostFuzzerRun(c *gin.Context) {
+func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
     var request service.FuzzerResult
 
     if err := c.ShouldBindJSON(&request); err != nil {
@@ -119,7 +119,7 @@ func (h *FuzzerHandler) PostFuzzerRun(c *gin.Context) {
     c.JSON(http.StatusCreated, gin.H{"status": "success"})
 }
 
-func (h *FuzzerHandler) GetFuzzerRun(c *gin.Context) {
+func (h *FuzzTraceHandler) GetFuzzerRun(c *gin.Context) {
     runID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
@@ -135,7 +135,7 @@ func (h *FuzzerHandler) GetFuzzerRun(c *gin.Context) {
     c.JSON(http.StatusOK, run)
 }
 
-func (h *FuzzerHandler) GetFuzzerRuns(c *gin.Context) {
+func (h *FuzzTraceHandler) GetFuzzerRuns(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "25")
 	limit, err := strconv.Atoi(c.Param("limit"))
 	if err != nil || limit < 10 {
@@ -164,7 +164,7 @@ func (h *FuzzerHandler) GetFuzzerRuns(c *gin.Context) {
     c.JSON(http.StatusOK, runs)
 }
 
-func (h *FuzzerHandler) GetRunsByTag(c *gin.Context) {
+func (h *FuzzTraceHandler) GetRunsByTag(c *gin.Context) {
     tagName := c.Param("tag")
     
     runs, err := h.service.GetRunsByTag(c.Request.Context(), tagName)

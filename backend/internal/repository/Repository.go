@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"model"
+    "db"
 )
 
 type Repository interface {
@@ -11,24 +12,20 @@ type Repository interface {
 	GetAnalyzerExecution(ctx context.Context, executionId int) (model.AnalyzerExecution, error)
 
 	// Fuzzer runs
-    StoreRun(ctx context.Context, run *model.FuzzerRun) error
-    GetRun(ctx context.Context, id int) (*model.FuzzerRun, error)
-    GetRuns(ctx context.Context, filter RunFilter) ([]model.FuzzerRun, error)
+    StoreRun(ctx context.Context, run *FuzzerRun) error
+    GetRun(ctx context.Context, id int) (*FuzzerRun, error)
+    GetRuns(ctx context.Context, filter RunFilter) ([]FuzzerRun, error)
 
     // tags
-    GetOrStoreTag(ctx context.Context, name string) (*model.Tag, error)
+    GetOrStoreTag(ctx context.Context, name string) (*Tag, error)
     AddTagToRun(ctx context.Context, runID int, tagName string) error
     GetRunTags(ctx context.Context, runID int) ([]string, error)
-    GetRunsByTag(ctx context.Context, tagName string) ([]model.FuzzerRun, error)
+    GetRunsByTag(ctx context.Context, tagName string) ([]FuzzerRun, error)
 
     // Crashes related to fuzzer run
-    StoreCrash(ctx context.Context, crash *model.OpCrash) error
-    StoreTestCase(ctx context.Context, testCase *model.TestCase) error
-    StoreFsSummary(ctx context.Context, summary *model.FsTestSummary) error
-    StoreTestArtifact(ctx context.Context, artifact *model.TestArtifact) error
-    StoreFsArtifact(ctx context.Context, artifact *model.FsArtifact) error
-
-    GetRunWithDetails(ctx context.Context, runID int) (*RunDetails, error)
-    GetRunStats(ctx context.Context) ([]RunStats, error)
-	GetRunsFilteredByDate(ctx context.Context, runFilter RunDateFilter) ([]model.FuzzerRun, error)
+    StoreCrash(ctx context.Context, crash *OpCrash) error
+    StoreTestCase(ctx context.Context, testCase *TestCase) error
+    StoreFsSummary(ctx context.Context, summary *FsTestSummary) error
+    StoreTestArtifact(ctx context.Context, artifact *TestArtifact) error
+    StoreFsArtifact(ctx context.Context, artifact *FsArtifact) error
 }

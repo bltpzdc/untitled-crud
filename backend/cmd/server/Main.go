@@ -28,9 +28,9 @@ func main() {
     }
     defer conn.Release()
 
-    fuzzerRepo := postgres.NewFuzzerRepository(conn.Conn())
-    fuzzerService := service.NewFuzzerService(fuzzerRepo)
-    fuzzerHandler := handler.NewFuzzerHandler(fuzzerService)
+    fuzzTraceRepo := postgres.NewFuzzTraceRepository(conn.Conn())
+    fuzzTraceService := service.NewFuzzTraceService(fuzzTraceRepo)
+    fuzzTraceHandler := handler.NewFuzzTraceHandler(fuzzTraceService)
 
 	router := gin.Default()
 
@@ -39,18 +39,9 @@ func main() {
 
 	router.Static("/docs", "./docs")
 
-	// whiteService, err := service.NewWhiteService(
-	// 	repository.ArrayRepository{AnalyzerExecutions: make([]model.AnalyzerExecution, 0)},
-	// )
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// handler := api.NewWhiteHandler(whiteService)
-
-	router.POST("/run", fuzzerHandler.PostFuzzerRun)
-	router.GET("/runs", fuzzerHandler.GetExecutionsHandler)
-	router.GET("/run/:id", fuzzerHandler.GetFuzzerRun)
+	router.POST("/run", fuzzTraceHandler.PostFuzzerRun)
+	router.GET("/runs", fuzzTraceHandler.GetExecutionsHandler)
+	router.GET("/run/:id", fuzzTraceHandler.GetFuzzerRun)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := router.Run(":8080"); err != nil {

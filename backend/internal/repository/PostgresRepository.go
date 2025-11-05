@@ -4,20 +4,75 @@ import (
     "context"
     "fmt"
 
-    "model"
-
     "github.com/jackc/pgx/v5"
 )
 
-type FuzzerRepository struct {
+type FuzzerRun struct {
+    ID           int       `db:"id"`
+    Timestamp    time.Time `db:"timestamp"`
+    FailureCount int       `db:"failure_count"`
+}
+
+type Tag struct {
+    ID   int    `db:"id"`
+    Name string `db:"name"`
+}
+
+type RunTag struct {
+    ID        int `db:"id"`
+    RunID     int `db:"run_id"`
+    TagID     int `db:"tag_id"`
+}
+
+type OpCrash struct {
+    ID        int    `db:"id"`
+    RunID     int    `db:"run_id"`
+    DirName   string `db:"dir_name"`
+    Operation string `db:"operation"`
+}
+
+type TestCase struct {
+    ID              int    `db:"id"`
+    CrashID         int    `db:"crash_id"`
+    DirName         string `db:"dir_name"`
+    TotalOperations int    `db:"total_operations"`
+}
+
+type FsTestSummary struct {
+    ID              int             `db:"id"`
+    TestCaseID      int             `db:"test_case_id"`
+    FsName          string          `db:"fs_name"`
+    FsSuccessCount  int             `db:"fs_success_count"`
+    FsFailureCount  int             `db:"fs_failure_count"`
+    FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
+}
+
+type TestArtifact struct {
+    ID         int          `db:"id"`
+    TestCaseID int          `db:"test_case_id"`
+    TestOpsSeq pgtype.JSONB `db:"test_ops_seq"`
+    Reason     string       `db:"reason"`
+    Metadata   pgtype.JSONB `db:"metadata"`
+}
+
+type FsArtifact struct {
+    ID              int          `db:"id"`
+    TestArtifactsID int          `db:"test_artifacts_id"`
+    FsName          string       `db:"fs_name"`
+    FsStderr        string       `db:"fs_stderr"`
+    FsStdout        string       `db:"fs_stdout"`
+    FsTrace         pgtype.JSONB `db:"fs_trace"`
+}
+
+type FuzzTraceRepository struct {
     db *pgx.Conn
 }
 
-func NewFuzzerRepository(db *pgx.Conn) *FuzzerRepository {
-    return &FuzzerRepository{db: db}
+func NewFuzzTraceRepository(db *pgx.Conn) *FuzzTraceRepository {
+    return &FuzzTraceRepository{db: db}
 }
 
-func (r *FuzzerRepository) StoreRun(ctx context.Context, run *model.FuzzerRun) error {
+func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *FuzzerRun) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO fuzzer_runs (timestamp, failure_count)
         VALUES ($1, $2)
@@ -27,8 +82,8 @@ func (r *FuzzerRepository) StoreRun(ctx context.Context, run *model.FuzzerRun) e
     return err
 }
 
-func (r *FuzzerRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
-    var run model.FuzzerRun
+func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*FuzzerRun, error) {
+    var run FuzzerRun
     err := r.db.QueryRow(ctx, `
         SELECT id, timestamp, failure_count
         FROM fuzzer_runs WHERE id = $1
@@ -41,7 +96,7 @@ func (r *FuzzerRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun
     return &run, nil
 }
 
-func (r *FuzzerRepository) GetRuns(ctx context.Context, limit, offset int) ([]model.FuzzerRun, error) {
+func (r *FuzzTraceRepository) GetRuns(ctx context.Context, limit, offset int) ([]FuzzerRun, error) {
     rows, err := r.db.Query(ctx, `
         SELECT id, timestamp, failure_count
         FROM fuzzer_runs 
@@ -54,9 +109,9 @@ func (r *FuzzerRepository) GetRuns(ctx context.Context, limit, offset int) ([]mo
     }
     defer rows.Close()
 
-    var runs []model.FuzzerRun
+    var runs []FuzzerRun
     for rows.Next() {
-        var run model.FuzzerRun
+        var run FuzzerRun
         err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
         if err != nil {
             return nil, err
@@ -67,8 +122,8 @@ func (r *FuzzerRepository) GetRuns(ctx context.Context, limit, offset int) ([]mo
     return runs, nil
 }
 
-func (r *FuzzerRepository) GetOrStoreTag(ctx context.Context, name string) (*model.Tag, error) {
-    var tag model.Tag
+func (r *FuzzTraceRepository) GetOrStoreTag(ctx context.Context, name string) (*Tag, error) {
+    var tag Tag
     
     err := r.db.QueryRow(ctx, `
         SELECT id, name FROM tags WHERE name = $1
@@ -87,8 +142,8 @@ func (r *FuzzerRepository) GetOrStoreTag(ctx context.Context, name string) (*mod
     return &tag, nil
 }
 
-func (r *FuzzerRepository) AddTagToRun(ctx context.Context, runID int, tagName string) error {
-    tag, err := r.GetOrCreateTag(ctx, tagName)
+func (r *FuzzTraceRepository) AddTagToRun(ctx context.Context, runID int, tagName string) error {
+    tag, err := r.GetOrStoreTag(ctx, tagName)
     if err != nil {
         return err
     }
@@ -102,7 +157,7 @@ func (r *FuzzerRepository) AddTagToRun(ctx context.Context, runID int, tagName s
     return err
 }
 
-func (r *FuzzerRepository) GetRunTags(ctx context.Context, runID int) ([]string, error) {
+func (r *FuzzTraceRepository) GetRunTags(ctx context.Context, runID int) ([]string, error) {
     rows, err := r.db.Query(ctx, `
         SELECT t.name
         FROM tags t
@@ -129,7 +184,7 @@ func (r *FuzzerRepository) GetRunTags(ctx context.Context, runID int) ([]string,
     return tags, nil
 }
 
-func (r *FuzzerRepository) GetRunsByTag(ctx context.Context, tagName string) ([]model.FuzzerRun, error) {
+func (r *FuzzTraceRepository) GetRunsByTag(ctx context.Context, tagName string) ([]FuzzerRun, error) {
     rows, err := r.db.Query(ctx, `
         SELECT fr.id, fr.timestamp, fr.failure_count
         FROM fuzzer_runs fr
@@ -144,9 +199,9 @@ func (r *FuzzerRepository) GetRunsByTag(ctx context.Context, tagName string) ([]
     }
     defer rows.Close()
 
-    var runs []model.FuzzerRun
+    var runs []FuzzerRun
     for rows.Next() {
-        var run model.FuzzerRun
+        var run FuzzerRun
         err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
         if err != nil {
             return nil, err
@@ -157,7 +212,7 @@ func (r *FuzzerRepository) GetRunsByTag(ctx context.Context, tagName string) ([]
     return runs, nil
 }
 
-func (r *FuzzerRepository) StoreCrash(ctx context.Context, crash *model.OpCrash) error {
+func (r *FuzzTraceRepository) StoreCrash(ctx context.Context, crash *OpCrash) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO op_crashes (run_id, dir_name, operation)
         VALUES ($1, $2, $3)
@@ -167,7 +222,7 @@ func (r *FuzzerRepository) StoreCrash(ctx context.Context, crash *model.OpCrash)
     return err
 }
 
-func (r *FuzzerRepository) StoreTestCase(ctx context.Context, testCase *model.TestCase) error {
+func (r *FuzzTraceRepository) StoreTestCase(ctx context.Context, testCase *TestCase) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO test_cases (crash_id, dir_name, total_operations)
         VALUES ($1, $2, $3)
@@ -177,7 +232,7 @@ func (r *FuzzerRepository) StoreTestCase(ctx context.Context, testCase *model.Te
     return err
 }
 
-func (r *FuzzerRepository) StoreFsSummary(ctx context.Context, summary *model.FsTestSummary) error {
+func (r *FuzzTraceRepository) StoreFsSummary(ctx context.Context, summary *FsTestSummary) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO fs_test_summaries 
         (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time)
@@ -189,7 +244,7 @@ func (r *FuzzerRepository) StoreFsSummary(ctx context.Context, summary *model.Fs
     return err
 }
 
-func (r *FuzzerRepository) StoreTestArtifact(ctx context.Context, artifact *model.TestArtifact) error {
+func (r *FuzzTraceRepository) StoreTestArtifact(ctx context.Context, artifact *TestArtifact) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO test_artifacts (test_case_id, test_ops_seq, reason, metadata)
         VALUES ($1, $2, $3, $4)
@@ -199,7 +254,7 @@ func (r *FuzzerRepository) StoreTestArtifact(ctx context.Context, artifact *mode
     return err
 }
 
-func (r *FuzzerRepository) StoreFsArtifact(ctx context.Context, artifact *model.FsArtifact) error {
+func (r *FuzzTraceRepository) StoreFsArtifact(ctx context.Context, artifact *FsArtifact) error {
     err := r.db.QueryRow(ctx, `
         INSERT INTO fs_artifacts 
         (test_artifacts_id, fs_name, fs_stderr, fs_stdout, fs_trace)
@@ -209,84 +264,4 @@ func (r *FuzzerRepository) StoreFsArtifact(ctx context.Context, artifact *model.
         artifact.FsStdout, artifact.FsTrace).Scan(&artifact.ID)
     
     return err
-}
-
-func (r *FuzzerRepository) GetRunWithDetails(ctx context.Context, runID int) (*repository.RunDetails, error) {
-	run, err := r.GetRun(ctx, runID)
-    if err != nil {
-        return nil, err
-    }
-
-    tags, err := r.GetRunTags(ctx, runID)
-    if err != nil {
-        return nil, err
-    }
-
-    rows, err := r.db.Query(ctx, `
-        SELECT id, run_id, dir_name, operation 
-        FROM op_crashes WHERE run_id = $1
-    `, runID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-
-    var crashes []model.OpCrash
-    for rows.Next() {
-        var crash model.OpCrash
-        if err := rows.Scan(&crash.ID, &crash.RunID, &crash.DirName, &crash.Operation); err != nil {
-            return nil, err
-        }
-        crashes = append(crashes, crash)
-    }
-
-    return &repository.RunDetails{
-        Run:     run,
-        Tags:    tags,
-        Crashes: crashes,
-    }, nil
-}
-
-func (r *FuzzerRepository) GetRunStats(ctx context.Context) ([]RunStats, error) {}
-
-func (r *FuzzerRepository) GetRunsFilteredByDate(ctx context.Context, filter repository.RunDateFilter) ([]model.FuzzerRun, error) {
-    query := `
-        SELECT id, timestamp, failure_count
-        FROM fuzzer_runs 
-        WHERE 1=1
-    `
-    args := []interface{}{}
-    argPos := 1
-
-    if !filter.StartDate.IsZero() {
-        query += fmt.Sprintf(" AND timestamp >= $%d", argPos)
-        args = append(args, filter.StartDate)
-        argPos++
-    }
-
-    if !filter.EndDate.IsZero() {
-        query += fmt.Sprintf(" AND timestamp <= $%d", argPos)
-        args = append(args, filter.EndDate)
-        argPos++
-    }
-
-    query += " ORDER BY timestamp DESC"
-
-    rows, err := r.db.Query(ctx, query, args...)
-    if err != nil {
-        return nil, fmt.Errorf("failed to query runs: %w", err)
-    }
-    defer rows.Close()
-
-    var runs []model.FuzzerRun
-    for rows.Next() {
-        var run model.FuzzerRun
-        err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
-        if err != nil {
-            return nil, fmt.Errorf("failed to scan run: %w", err)
-        }
-        runs = append(runs, run)
-    }
-
-    return runs, nil
 }

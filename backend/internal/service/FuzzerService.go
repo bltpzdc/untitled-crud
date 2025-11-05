@@ -12,76 +12,40 @@ import (
     "github.com/jackc/pgx/v5/pgtype"
 )
 
-type FuzzerService struct {
-    fuzzerRepo repository.FuzzerRepository
+type FuzzTraceService struct {
+    fuzzerRepo repository.FuzzTraceRepository
 }
 
-func NewFuzzerService(fuzzerRepo repository.FuzzerRepository) *FuzzerService {
-    return &FuzzerService{
-        fuzzerRepo:  fuzzerRepo,
+func NewFuzzTraceService(fuzzerRepo repository.FuzzTraceRepository) *FuzzTraceService {
+    return &FuzzTraceService{
+        fuzzTraceRepo:  fuzzTraceRepo,
     }
 }
 
-type FuzzerResult struct {
-    Timestamp    time.Time
-    FailureCount int
-    Tags         []string
-    Crashes      []CrashData
-}
-
-type CrashData struct {
-    DirName   string
-    Operation string
-    TestCases []TestCaseData
-}
-
-type TestCaseData struct {
-    DirName         string
-    TotalOperations int
-    FsSummaries     map[string]FsSummary
-    // artifacts
-    TestOpsSeq      pgtype.JSONB
-    Reason          string
-    Metadata        pgtype.JSONB
-    FsArtifacts     map[string]FsArtifactData
-}
-
-type FsSummary struct {
-    SuccessCount  int
-    FailureCount  int
-    ExecutionTime pgtype.Interval
-}
-
-type FsArtifactData struct {
-    Stderr string
-    Stdout string
-    Trace  pgtype.JSONB
-}
-
-func (s *FuzzerService) StoreFuzzerResult(ctx context.Context, result *FuzzerResult) error {
-    run := &model.FuzzerRun{
+func (s *FuzzTraceService) StoreFuzzerResult(ctx context.Context, result *model.FuzzerRunData) error {
+    run := &repository.FuzzerRun{
         Timestamp:    result.Timestamp,
         FailureCount: result.FailureCount,
     }
     
-    if err := s.fuzzerRepo.StoreRun(ctx, run); err != nil {
+    if err := s.fuzzTraceRepo.StoreRun(ctx, run); err != nil {
         return fmt.Errorf("failed to store run: %w", err)
     }
 
     for _, tagName := range result.Tags {
-        if err := s.fuzzerRepo.AddTagToRun(ctx, run.ID, tagName); err != nil {
+        if err := s.fuzzTraceRepo.AddTagToRun(ctx, run.ID, tagName); err != nil {
             return fmt.Errorf("failed to add tag %s to run: %w", tagName, err)
         }
     }
 
     for _, crashData := range result.Crashes {
-        crash := &model.OpCrash{
+        crash := &repository.OpCrash{
             RunID:     run.ID,
             DirName:   crashData.DirName,
             Operation: crashData.Operation,
         }
         
-        if err := s.fuzzerRepo.StoreCrash(ctx, crash); err != nil {
+        if err := s.fuzzTraceRepo.StoreCrash(ctx, crash); err != nil {
             return fmt.Errorf("failed to store crash: %w", err)
         }
 
@@ -96,19 +60,19 @@ func (s *FuzzerService) StoreFuzzerResult(ctx context.Context, result *FuzzerRes
     return nil
 }
 
-func (s *FuzzerService) storeTestCase(ctx context.Context, crashID int, testCaseData TestCaseData) error {
-    testCase := &model.TestCase{
+func (s *FuzzTraceService) storeTestCase(ctx context.Context, crashID int, testCaseData *repository.TestCaseData) error {
+    testCase := &repository.TestCase{
         CrashID:         crashID,
         DirName:         testCaseData.DirName,
         TotalOperations: testCaseData.TotalOperations,
     }
     
-    if err := s.fuzzerRepo.StoreTestCase(ctx, testCase); err != nil {
+    if err := s.fuzzTraceRepo.StoreTestCase(ctx, testCase); err != nil {
         return fmt.Errorf("failed to store test case: %w", err)
     }
 
     for fsName, fsSummary := range testCaseData.FsSummaries {
-        summary := &model.FsTestSummary{
+        summary := &repository.FsTestSummary{
             TestCaseID:       testCase.ID,
             FsName:           fsName,
             FsSuccessCount:   fsSummary.SuccessCount,
@@ -116,24 +80,24 @@ func (s *FuzzerService) storeTestCase(ctx context.Context, crashID int, testCase
             FsExecutionTime:  fsSummary.ExecutionTime,
         }
         
-        if err := s.fuzzerRepo.StoreFsSummary(ctx, summary); err != nil {
+        if err := s.fuzzTraceRepo.StoreFsSummary(ctx, summary); err != nil {
             return fmt.Errorf("failed to store FS summary: %w", err)
         }
     }
 
-    testArtifact := &model.TestArtifact{
+    testArtifact := &repository.TestArtifact{
         TestCaseID: testCase.ID,
         TestOpsSeq: testCaseData.TestOpsSeq,
         Reason:     testCaseData.Reason,
         Metadata:   testCaseData.Metadata,
     }
     
-    if err := s.fuzzerRepo.StoreTestArtifact(ctx, testArtifact); err != nil {
+    if err := s.fuzzTraceRepo.StoreTestArtifact(ctx, testArtifact); err != nil {
         return fmt.Errorf("failed to store test artifact: %w", err)
     }
 
     for fsName, fsArtifact := range testCaseData.FsArtifacts {
-        fsArtifactModel := &model.FsArtifact{
+        fsArtifact := &repository.FsArtifact{
             TestArtifactsID: testArtifact.ID,
             FsName:          fsName,
             FsStderr:        fsArtifact.Stderr,
@@ -141,7 +105,7 @@ func (s *FuzzerService) storeTestCase(ctx context.Context, crashID int, testCase
             FsTrace:         fsArtifact.Trace,
         }
         
-        if err := s.fuzzerRepo.StoreFsArtifact(ctx, fsArtifactModel); err != nil {
+        if err := s.fuzzTraceRepo.StoreFsArtifact(ctx, fsArtifact); err != nil {
             return fmt.Errorf("failed to store FS artifact: %w", err)
         }
     }
@@ -149,14 +113,14 @@ func (s *FuzzerService) storeTestCase(ctx context.Context, crashID int, testCase
     return nil
 }
 
-func (s *FuzzerService) GetRuns(ctx context.Context, limit, offset int) ([]model.FuzzerRun, error) {
-	runs, err := s.fuzzerRepo.GetRuns(ctx, limit, offset)
+func (s *FuzzTraceService) GetRuns(ctx context.Context, limit, offset int) ([]repository.FuzzerRun, error) {
+	runs, err := s.fuzzTraceRepo.GetRuns(ctx, limit, offset)
     if err != nil {
         return nil, err
     }
 
 	for i := range runs {
-		tags, err := s.fuzzerRepo.GetRunTags(ctx, runs[i].ID)
+		tags, err := s.fuzzTraceRepo.GetRunTags(ctx, runs[i].ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get run tags: %w", err)
 		}
@@ -166,13 +130,13 @@ func (s *FuzzerService) GetRuns(ctx context.Context, limit, offset int) ([]model
 	return runs, nil
 }
 
-func (s *FuzzerService) GetRun(ctx context.Context, runID int) (*model.FuzzerRun, error) {
-    run, err := s.fuzzerRepo.GetRun(ctx, runID)
+func (s *FuzzTraceService) GetRun(ctx context.Context, runID int) (*repository.FuzzerRun, error) {
+    run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
     if err != nil {
         return nil, err
     }
 
-    tags, err := s.fuzzerRepo.GetRunTags(ctx, runID)
+    tags, err := s.fuzzTraceRepo.GetRunTags(ctx, runID)
     if err != nil {
         return nil, fmt.Errorf("failed to get run tags: %w", err)
     }
@@ -181,14 +145,14 @@ func (s *FuzzerService) GetRun(ctx context.Context, runID int) (*model.FuzzerRun
 	return run, nil
 }
 
-func (s *FuzzerService) GetRunsByTag(ctx context.Context, tagName string) ([]model.FuzzerRun, error) {
-    runs, err := s.fuzzerRepo.GetRunsByTag(ctx, tagName)
+func (s *FuzzTraceService) GetRunsByTag(ctx context.Context, tagName string) ([]repository.FuzzerRun, error) {
+    runs, err := s.fuzzTraceRepo.GetRunsByTag(ctx, tagName)
     if err != nil {
         return nil, fmt.Errorf("failed to find runs by tag: %w", err)
     }
 
     for i := range runs {
-        tags, err := s.fuzzerRepo.GetRunTags(ctx, runs[i].ID)
+        tags, err := s.fuzzTraceRepo.GetRunTags(ctx, runs[i].ID)
         if err != nil {
             return nil, fmt.Errorf("failed to get run tags: %w", err)
         }
