@@ -10,6 +10,7 @@ import SelectContent from './SelectContent';
 import SideMenuContent from './SideMenuContent';
 import OptionsMenu from './OptionsMenu';
 
+// TODO(savikin): it's repeated in MainMenu, merge
 const drawerWidth = 480;
 
 const Drawer = styled(MuiDrawer)({
