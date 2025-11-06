@@ -1,0 +1,103 @@
+basePath: /
+definitions:
+  main.TextEntry:
+    properties:
+      id:
+        description: Уникальный идентификатор записи
+        example: 1
+        type: integer
+      text:
+        description: Текст записи (обязательное поле)
+        example: Пример текста
+        type: string
+    required:
+    - text
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.example.com/support
+  description: REST API для сохранения и получения текстовых данных с использованием
+    PostgreSQL
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Simple Text API
+  version: "1.0"
+paths:
+  /text:
+    post:
+      consumes:
+      - application/json
+      description: Сохраняет новый текст в базу данных
+      parameters:
+      - description: Текст для сохранения
+        in: body
+        name: text
+        required: true
+        schema:
+          $ref: '#/definitions/main.TextEntry'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Текст успешно сохранен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный формат запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при сохранении
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать текстовую запись
+      tags:
+      - text
+  /text/{id}:
+    get:
+      description: Возвращает текстовую запись по указанному идентификатору
+      parameters:
+      - description: ID текстовой записи
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Текстовая запись
+          schema:
+            $ref: '#/definitions/main.TextEntry'
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Запись не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при получении
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить текст по ID
+      tags:
+      - text
+swagger: "2.0"
