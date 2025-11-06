@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
-import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
+import Drawer from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
@@ -13,36 +13,24 @@ import OptionsMenu from './OptionsMenu';
 // TODO(savikin): it's repeated in MainMenu, merge
 const drawerWidth = 480;
 
-const Drawer = styled(MuiDrawer)({
-  boxSizing: 'border-box',
-  mt: 10,
-  [`& .${drawerClasses.paper}`]: {
-    width: drawerWidth,
-    boxSizing: 'border-box',
-  },
-});
-
 export default function SideMenu() {
   return (
     <Drawer
       variant="permanent"
+      anchor="left"
       sx={{
-        display: { xs: 'none', md: 'block' },
-        [`& .${drawerClasses.paper}`]: {
-          backgroundColor: 'background.paper',
+        width: drawerWidth,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: drawerWidth,
+          boxSizing: 'border-box',
         },
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          mt: 'calc(var(--template-frame-height, 0px) + 4px)',
-          p: 1.5,
-        }}
-      >
         <SelectContent />
-      </Box>
       <Divider />
+
+      {/* Vertical spacer */}
       <Box
         sx={{
           overflow: 'auto',
@@ -50,8 +38,8 @@ export default function SideMenu() {
           display: 'flex',
           flexDirection: 'column',
         }}
-      >
-      </Box>
+      />
+
       <Stack
         direction="row"
         sx={{
