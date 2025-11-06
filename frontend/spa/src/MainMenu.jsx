@@ -8,6 +8,8 @@ import SelectContent from './SelectContent';
 import OptionsMenu from './OptionsMenu';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import TextField from '@mui/material/TextField';
+import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -52,6 +54,15 @@ const runs = [
     datatype: "run",
     text: 'Испытание 1',
     run_time: new Date(),
+    fstype: ['ext4', 'xfs'],
+    analyzer: '???',
+
+    bugs: {
+      truncate: {
+      },
+      rename: {
+      }
+    }
   },
   { 
     datatype: "bug",
@@ -80,7 +91,7 @@ export default function MainMenu() {
           variant="fullWidth"
         >
           {runs.map((item, index) => (
-            <Tab label={item.text} {...a11yProps(index)} />
+            <Tab label={item.text} key={index} {...a11yProps(index)} />
           ))}
         </Tabs>
       </AppBar>
@@ -90,9 +101,21 @@ export default function MainMenu() {
       <Toolbar/>
 
       {runs.map((item, index) => (
-        <TabPanel value={value} index={index}>
+        <TabPanel component={'span'} value={value} index={index} key={index}>
           {
-            (item.datatype == 'run') ?  () : (JSON.stringify(item.reason))
+            (item.datatype == 'run') ?
+            <Box>
+              <Box>
+                Дата и время: {item.run_time.toString()}
+              </Box>
+              <Box>
+                Файловые системы: {item.fstype.join(', ')}
+              </Box>
+              <Box>
+                Анализатор: {item.analyzer}
+              </Box>
+            </Box>
+            : (JSON.stringify(item.reason))
           }
         </TabPanel>
       ))}
