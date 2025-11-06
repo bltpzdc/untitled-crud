@@ -14,8 +14,6 @@ import OptionsMenu from './OptionsMenu';
 const drawerWidth = 480;
 
 const Drawer = styled(MuiDrawer)({
-  width: drawerWidth,
-  flexShrink: 0,
   boxSizing: 'border-box',
   mt: 10,
   [`& .${drawerClasses.paper}`]: {
