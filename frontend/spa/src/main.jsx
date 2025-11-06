@@ -15,12 +15,12 @@ import MainMenu from './MainMenu.jsx'
 
 
 createRoot(document.getElementById('root')).render(
-  <Box sx={{ display: 'flex' }}>
-    <CssBaseline/>
-    <StrictMode>
+  <CssBaseline/>
+  <StrictMode>
+    <Box sx={{ display: 'flex' }}>
       {/* NOTE(savikin): put sidemenu inside MainMenu
        while working around layout bugs */}
       <MainMenu/>
-    </StrictMode>
-  </Box>
+    </Box>
+  </StrictMode>
 )
