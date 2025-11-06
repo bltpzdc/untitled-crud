@@ -13,6 +13,11 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+
+
+import SideMenu from './SideMenu.jsx'
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -21,8 +26,8 @@ function TabPanel(props) {
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`full-width-tabpanel-${index}`}
-      aria-labelledby={`full-width-tab-${index}`}
+      id={`mainmenu-fullwidth-tabpanel-${index}`}
+      aria-labelledby={`mainmenu-fullwidth-tab-${index}`}
       {...other}
     >
       {value === index && (
@@ -35,8 +40,8 @@ function TabPanel(props) {
 }
 function a11yProps(index) {
   return {
-    id: `full-width-tab-${index}`,
-    'aria-controls': `full-width-tabpanel-${index}`,
+    id: `mainmenu-fullwidth-tab-${index}`,
+    'aria-controls': `mainmenu-fullwidth-tabpanel-${index}`,
   };
 }
 
@@ -79,11 +84,14 @@ export default function MainMenu() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed" sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}>
+    <>
+      <AppBar 
+        position="fixed"
+        sx={{
+          width: `calc(100% - ${drawerWidth}px)`,
+          ml: `${drawerWidth}px`,
+        }}
+      >
         <Tabs
           value={value}
           onChange={handleChange}
@@ -95,30 +103,52 @@ export default function MainMenu() {
           ))}
         </Tabs>
       </AppBar>
-      {/* Toolbar is here to fix some collision issues,
-       in accordance to something i have seen once somewhere in the docs
-       hence: might be neither needed nor harmless*/}
-      <Toolbar/>
 
-      {runs.map((item, index) => (
-        <TabPanel component={'span'} value={value} index={index} key={index}>
-          {
-            (item.datatype == 'run') ?
-            <Box>
-              <Box>
-                Дата и время: {item.run_time.toString()}
-              </Box>
-              <Box>
-                Файловые системы: {item.fstype.join(', ')}
-              </Box>
-              <Box>
-                Анализатор: {item.analyzer}
-              </Box>
-            </Box>
-            : (JSON.stringify(item.reason))
-          }
-        </TabPanel>
-      ))}
-    </Box>
+      <SideMenu/>
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          bgcolor: 'background.default',
+          minHeight: '100vh',
+          minWidth: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          flexGrow: 1,
+          overflow: 'auto',
+          p: 3,
+        }}
+      >
+        {/* Toolbar is here to fix some collision issues,
+         in accordance to something i have seen once somewhere in the docs
+         hence: might be neither needed nor harmless*/}
+        <Toolbar/>
+        {runs.map((item, index) => (
+          <TabPanel component={'span'} value={value} index={index} key={index}>
+            {
+              (item.datatype == 'run') ?
+              <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                <Grid size={6}>
+                  Дата и время: {item.run_time.toString()}
+                </Grid>
+                <Grid size={6}>
+                  Комментарий: <TextField id="outlined-basic" label="Outlined" variant="outlined" />
+                </Grid>
+                <Grid size={6}>
+                  Файловые системы: {item.fstype.join(', ')}
+                </Grid>
+                <Grid size={6}>
+                  Анализатор: {item.analyzer}
+                </Grid>
+                <Grid size={6}>
+                </Grid>
+              </Grid>
+              : (JSON.stringify(item.reason))
+            }
+          </TabPanel>
+        ))}
+      </Box>
+    </>
   );
 }

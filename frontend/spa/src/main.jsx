@@ -5,29 +5,22 @@ import './index.css'
 import CssBaseline from '@mui/material/CssBaseline';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import SideMenu from './SideMenu.jsx'
 import MainMenu from './MainMenu.jsx'
 
+
 createRoot(document.getElementById('root')).render(
-  <CssBaseline>
+  <Box sx={{ display: 'flex' }}>
+    <CssBaseline/>
     <StrictMode>
-      <Box sx={{ display: 'flex' }}>
-        <SideMenu/>
-        <Box
-          component="main"
-          sx={(theme) => ({
-            flexGrow: 1,
-            overflow: 'auto',
-          })}
-        >
-          <MainMenu/>
-        </Box>
-      </Box>
+      {/* NOTE(savikin): put sidemenu inside MainMenu
+       while working around layout bugs */}
+      <MainMenu/>
     </StrictMode>
-  </CssBaseline>
+  </Box>
 )
