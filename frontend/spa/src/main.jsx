@@ -13,7 +13,6 @@ import '@fontsource/roboto/700.css';
 
 import MainMenu from './MainMenu.jsx'
 
-
 createRoot(document.getElementById('root')).render(
   <Box sx={{ display: 'flex' }}>
     <CssBaseline/>

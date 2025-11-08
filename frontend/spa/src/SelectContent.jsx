@@ -62,8 +62,8 @@ export default function SelectContent() {
   return (
     <Box style={{ width:"100%" }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Tabs value={value} onChange={handleChange} aria-label="Select mode">
-        <Tab style={{width:"50%"}} label="Просмотр" {...a11yProps(0)} />
-        <Tab style={{width:"50%"}} label="Загрузка" {...a11yProps(1)} />
+        <Tab style={{width:"90%"}} label="Список испытаний" {...a11yProps(0)} />
+        <Tab style={{width:"10%"}} label="+" {...a11yProps(1)} />
       </Tabs>
 
       <TabPanel value={value} index={0}>
