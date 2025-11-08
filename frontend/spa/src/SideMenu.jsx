@@ -16,18 +16,18 @@ const drawerWidth = 480;
 export default function SideMenu() {
   return (
     <Drawer
-      variant="permanent"
-      anchor="left"
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        '& .MuiDrawer-paper': {
+        "& .MuiDrawer-paper": {
           width: drawerWidth,
-          boxSizing: 'border-box',
+          boxSizing: "border-box",
         },
       }}
+      variant="permanent"
+      anchor="left"
     >
-        <SelectContent />
+      <SelectContent />
       <Divider />
 
       {/* Vertical spacer */}
