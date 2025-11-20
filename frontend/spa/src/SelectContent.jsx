@@ -24,7 +24,7 @@ function TabPanel(props) {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`full-width-tabpanel-${index}`}
       aria-labelledby={`full-width-tab-${index}`}
@@ -60,10 +60,10 @@ export default function SelectContent() {
   };
 
   return (
-    <Box style={{ width:"100%" }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={value} onChange={handleChange} aria-label="Select mode">
-        <Tab style={{width:"90%"}} label="Список испытаний" {...a11yProps(0)} />
-        <Tab style={{width:"10%"}} label="+" {...a11yProps(1)} />
+    <Box style={{ width:'100%' }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs value={value} onChange={handleChange} aria-label='Select mode'>
+        <Tab style={{width:'90%'}} label='Список испытаний' {...a11yProps(0)} />
+        <Tab style={{width:'10%'}} label='+' {...a11yProps(1)} />
       </Tabs>
 
       <TabPanel value={value} index={0}>

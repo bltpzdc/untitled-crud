@@ -19,13 +19,13 @@ export default function SideMenu() {
       sx={{
         width: drawerWidth,
         flexShrink: 0,
-        "& .MuiDrawer-paper": {
+        '& .MuiDrawer-paper': {
           width: drawerWidth,
-          boxSizing: "border-box",
+          boxSizing: 'border-box',
         },
       }}
-      variant="permanent"
-      anchor="left"
+      variant='permanent'
+      anchor='left'
     >
       <SelectContent />
       <Divider />
@@ -41,7 +41,7 @@ export default function SideMenu() {
       />
 
       <Stack
-        direction="row"
+        direction='row'
         sx={{
           p: 2,
           gap: 1,
@@ -51,16 +51,16 @@ export default function SideMenu() {
         }}
       >
         <Avatar
-          sizes="small"
-          alt="User"
-          src="/static/images/avatar/7.jpg"
+          sizes='small'
+          alt='User'
+          src='/static/images/avatar/7.jpg'
           sx={{ width: 36, height: 36 }}
         />
         <Box sx={{ mr: 'auto' }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: '16px' }}>
+          <Typography variant='body2' sx={{ fontWeight: 500, lineHeight: '16px' }}>
             User
           </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          <Typography variant='caption' sx={{ color: 'text.secondary' }}>
             user@example.com
           </Typography>
         </Box>
