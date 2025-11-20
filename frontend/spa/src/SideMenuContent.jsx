@@ -13,12 +13,7 @@ import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 
-let sidepanel_runs = [
-  { text: 'Испытание 1' },
-  { text: 'Испытание 2' },
-  { text: 'Испытание 3' },
-  { text: 'Испытание 4' },
-];
+import { storage } from './Data.js';
 
 export default function SideMenuContent() {
   return (
@@ -28,7 +23,9 @@ export default function SideMenuContent() {
         alignItems: 'stretch',
         justifyContent: 'space-between' }}>
       <List>
-        {sidepanel_runs.map((item, index) => (
+        {storage
+          .filter((x) => x.datatype == 'run')
+          .map((item, index) => (
           <ListItem key={index}>
             <ListItemButton >
               <ListItemText primary={item.text} />
