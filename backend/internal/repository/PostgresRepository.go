@@ -4,8 +4,6 @@ import (
     "context"
     "encoding/json"
     "github.com/jackc/pgx/v5"
-
-    "github.com/metametamoon/untitled-crud/backend/internal/model"
 )
 
 type FuzzTraceRepository struct {
@@ -18,7 +16,7 @@ func NewFuzzTraceRepository(db *pgx.Conn) *FuzzTraceRepository {
     }
 }
 
-func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun) error {
+func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *FuzzerRun) error {
     var runID int
     
     // trying to find run
@@ -58,8 +56,8 @@ func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun
     return nil
 }
 
-func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
-    var run model.FuzzerRun
+func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*FuzzerRun, error) {
+    var run FuzzerRun
 
     // get requested run
     err := r.db.QueryRow(ctx, `
@@ -88,7 +86,7 @@ func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.Fuzzer
     return &run, nil
 }
 
-func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {
+func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]FuzzerRun, error) {
     rows, err := r.db.Query(ctx,
         "SELECT id, timestamp, failure_count FROM fuzzer_runs ORDER BY timestamp DESC",
     )
@@ -97,10 +95,10 @@ func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, e
     }
     defer rows.Close()
     
-    var runs []model.FuzzerRun
+    var runs []FuzzerRun
     
     for rows.Next() {
-        var run model.FuzzerRun
+        var run FuzzerRun
         err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
         if err != nil {
             return nil, err
@@ -124,16 +122,16 @@ func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, e
     return runs, nil
 }
 
-func (r *FuzzTraceRepository) GetAllTags(ctx context.Context) ([]model.Tag, error) {
+func (r *FuzzTraceRepository) GetAllTags(ctx context.Context) ([]Tag, error) {
     rows, err := r.db.Query(ctx, "SELECT id, name FROM tags ORDER BY name")
     if err != nil {
         return nil, err
     }
     defer rows.Close()
     
-    var tags []model.Tag
+    var tags []Tag
     for rows.Next() {
-        var tag model.Tag
+        var tag Tag
         if err := rows.Scan(&tag.ID, &tag.Name); err != nil {
             return nil, err
         }
@@ -145,7 +143,7 @@ func (r *FuzzTraceRepository) GetAllTags(ctx context.Context) ([]model.Tag, erro
 
 // private functions
 
-func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, run *model.FuzzerRun) error {
+func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, run *FuzzerRun) error {
     // save crashes info
     for i := range run.OpCrashes {
         opCrash := &run.OpCrashes[i]
@@ -198,7 +196,7 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
     return nil
 }
 
-func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([]model.OpCrash, error) {
+func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([]OpCrash, error) {
     rows, err := r.db.Query(ctx,
         "SELECT id, operation FROM op_crashes WHERE run_id = $1",
         runID,
@@ -208,9 +206,9 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
     }
     defer rows.Close()
     
-    var opCrashes []model.OpCrash
+    var opCrashes []OpCrash
     for rows.Next() {
-        var opCrash model.OpCrash
+        var opCrash OpCrash
         if err := rows.Scan(&opCrash.ID, &opCrash.Operation); err != nil {
             return nil, err
         }
@@ -228,7 +226,7 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
     return opCrashes, nil
 }
 
-func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]model.TestCase, error) {
+func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]TestCase, error) {
     rows, err := r.db.Query(ctx,
         "SELECT id, total_operations, test_seq, diff FROM test_cases WHERE crash_id = $1",
         crashID,
@@ -238,9 +236,9 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
     }
     defer rows.Close()
     
-    var testCases []model.TestCase
+    var testCases []TestCase
     for rows.Next() {
-        var testCase model.TestCase
+        var testCase TestCase
         var testJSON, diffJSON []byte
         
         if err := rows.Scan(&testCase.ID, &testCase.TotalOperations, &testJSON, &diffJSON); err != nil {
@@ -263,7 +261,7 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
     return testCases, nil
 }
 
-func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCaseID int) ([]model.FsTestSummary, error) {
+func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCaseID int) ([]FsTestSummary, error) {
     rows, err := r.db.Query(ctx,
         "SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time FROM fs_test_summaries WHERE test_case_id = $1",
         testCaseID,
@@ -273,9 +271,9 @@ func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCa
     }
     defer rows.Close()
     
-    var fsSummaries []model.FsTestSummary
+    var fsSummaries []FsTestSummary
     for rows.Next() {
-        var fsSummary model.FsTestSummary
+        var fsSummary FsTestSummary
         if err := rows.Scan(&fsSummary.ID, &fsSummary.FsName, &fsSummary.FsSuccessCount, 
             &fsSummary.FsFailureCount, &fsSummary.FsExecutionTime); err != nil {
             return nil, err

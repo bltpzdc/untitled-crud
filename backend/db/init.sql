@@ -1,28 +1,28 @@
-CREATE TABLE fuzzer_runs (
+CREATE TABLE IF NOT EXISTS fuzzer_runs (
     id SERIAL PRIMARY KEY,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
     failure_count INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id SERIAL PRIMARY KEY,
     name VARCHAR(20) NOT NULL UNIQUE
 );
 
-CREATE TABLE run_tags (
+CREATE TABLE IF NOT EXISTS run_tags (
     id SERIAL PRIMARY KEY,
     run_id INTEGER NOT NULL REFERENCES fuzzer_runs(id) ON DELETE CASCADE,
     tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
     UNIQUE(run_id, tag_id)
 );
 
-CREATE TABLE op_crashes (
+CREATE TABLE IF NOT EXISTS op_crashes (
     id SERIAL PRIMARY KEY,
     run_id INTEGER NOT NULL REFERENCES fuzzer_runs(id) ON DELETE CASCADE,
     operation VARCHAR(20) NOT NULL
 );
 
-CREATE TABLE test_cases (
+CREATE TABLE IF NOT EXISTS test_cases (
     id SERIAL PRIMARY KEY,
     crash_id INTEGER NOT NULL REFERENCES op_crashes(id) ON DELETE CASCADE,
     total_operations INTEGER NOT NULL DEFAULT 0,
@@ -30,7 +30,7 @@ CREATE TABLE test_cases (
     diff JSONB
 );
 
-CREATE TABLE fs_test_summaries (
+CREATE TABLE IF NOT EXISTS fs_test_summaries (
     id SERIAL PRIMARY KEY,
     test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
     fs_name VARCHAR(10) NOT NULL,

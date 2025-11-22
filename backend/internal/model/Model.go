@@ -45,39 +45,39 @@ type AnalyzerExecutionBriefView struct {
 // db related model
 
 type FuzzerRun struct {
-    ID           int       `db:"id"`
-    Timestamp    time.Time `db:"timestamp"`
-    FailureCount int       `db:"failure_count"`
-    Tags         []string  `db:"-"`
-    OpCrashes    []OpCrash `db:"-"`
+    ID           int
+    Timestamp    time.Time
+    FailureCount int
+    Tags         []string
+    OpCrashes    []OpCrash
 }
 
 type Tag struct {
-    ID   int    `db:"id"`
-    Name string `db:"name"`
+    ID   int
+    Name string
 }
 
 type OpCrash struct {
-    ID        int        `db:"id"`
-    RunID     int        `db:"run_id"`
-    Operation string     `db:"operation"`
-    TestCases []TestCase `db:"-"`
+    ID        int
+    RunID     int
+    Operation string
+    TestCases []TestCase
 }
 
 type TestCase struct {
-    ID              int             `db:"id"`
-    CrashID         int             `db:"crash_id"`
-    TotalOperations int             `db:"total_operations"`
-    Test            pgtype.Text     `db:"test"`
-    Diff            pgtype.Text     `db:"diff"`
-    FSSummaries     []FsTestSummary `db:"-"`
+    ID              int
+    CrashID         int
+    TotalOperations int
+    Test            pgtype.Text
+    Diff            pgtype.Text
+    FSSummaries     []FsTestSummary
 }
 
 type FsTestSummary struct {
-    ID              int             `db:"id"`
-    TestCaseID      int             `db:"test_case_id"`
-    FsName          string          `db:"fs_name"`
-    FsSuccessCount  int             `db:"fs_success_count"`
-    FsFailureCount  int             `db:"fs_failure_count"`
-    FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
+    ID              int
+    TestCaseID      int
+    FsName          string
+    FsSuccessCount  int
+    FsFailureCount  int
+    FsExecutionTime pgtype.Interval
 }
