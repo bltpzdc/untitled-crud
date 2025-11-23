@@ -1,83 +1,51 @@
+// Package model contains the data model (the business logic objects)
 package model
 
 import (
-	"fmt"
-    "time"
-    "github.com/jackc/pgx/v5/pgtype"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
-
-var ErrAnalyzerExecutionNotFound = fmt.Errorf("analyzer execution not found")
-
-type Metadata struct {
-	DateSent string
-}
-
-type AnalyzerExecution struct {
-	Id             int
-	Metadata       Metadata
-	LogFile        string
-	FoundTests     []Test
-	ZipArchivePath string
-}
 
 type FsOperation struct {
 	Type   string
 	Params map[string]any
 }
 
-type FsOperationResult interface{}
-
-type Test struct {
-	TestContent []FsOperation
-	Executions  []FileSystemExecution
-}
-
-type FileSystemExecution struct {
-	FileSystem      string
-	ExecutionResult []FsOperationResult
-}
-
-type AnalyzerExecutionBriefView struct {
-	Id   int
-	Meta Metadata
-}
-
-// db related model
-
 type FuzzerRun struct {
-    ID           int
-    Timestamp    time.Time
-    FailureCount int
-    Tags         []string
-    OpCrashes    []OpCrash
+	ID                              int                               `db:"id"`
+	Timestamp                       time.Time                         `db:"timestamp"`
+	FailureCount                    int                               `db:"failure_count"`
+	Tags                            []string                          `db:"-"`
+	CrashesGroupedByFailedOperation []CrashesGroupedByFailedOperation `db:"-"`
 }
 
 type Tag struct {
-    ID   int
-    Name string
+	ID   int    `db:"id"`
+	Name string `db:"name"`
 }
 
-type OpCrash struct {
-    ID        int
-    RunID     int
-    Operation string
-    TestCases []TestCase
+type CrashesGroupedByFailedOperation struct {
+	ID        int        `db:"id"`
+	RunID     int        `db:"run_id"`
+	Operation string     `db:"operation"`
+	TestCases []TestCase `db:"-"`
 }
 
 type TestCase struct {
-    ID              int
-    CrashID         int
-    TotalOperations int
-    Test            pgtype.Text
-    Diff            pgtype.Text
-    FSSummaries     []FsTestSummary
+	ID              int             `db:"id"`
+	CrashID         int             `db:"crash_id"`
+	TotalOperations int             `db:"total_operations"`
+	Test            pgtype.Text     `db:"test"`
+	Diff            pgtype.Text     `db:"diff"`
+	FSSummaries     []FsTestSummary `db:"-"`
 }
 
 type FsTestSummary struct {
-    ID              int
-    TestCaseID      int
-    FsName          string
-    FsSuccessCount  int
-    FsFailureCount  int
-    FsExecutionTime pgtype.Interval
+	ID              int             `db:"id"`
+	TestCaseID      int             `db:"test_case_id"`
+	FsName          string          `db:"fs_name"`
+	FsSuccessCount  int             `db:"fs_success_count"`
+	FsFailureCount  int             `db:"fs_failure_count"`
+	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
 }

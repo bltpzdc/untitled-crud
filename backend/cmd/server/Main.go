@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"github.com/metametamoon/untitled-crud/backend/internal/db"
 
-	"github.com/metametamoon/untitled-crud/backend/db"
-	"github.com/metametamoon/untitled-crud/backend/internal/api"
 	"github.com/metametamoon/untitled-crud/backend/internal/repository"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
+	"github.com/metametamoon/untitled-crud/backend/internal/transport"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -18,20 +18,20 @@ import (
 
 func main() {
 	database, err := db.NewDB()
-    if err != nil {
-        log.Fatal("Failed to connect to database:", err)
-    }
-    defer database.Close()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer database.Close()
 
-    conn, err := database.Pool.Acquire(context.Background())
-    if err != nil {
-        log.Fatal("Failed to acquire connection:", err)
-    }
-    defer conn.Release()
+	conn, err := database.Pool.Acquire(context.Background())
+	if err != nil {
+		log.Fatal("Failed to acquire connection:", err)
+	}
+	defer conn.Release()
 
-    fuzzTraceRepo := repository.NewFuzzTraceRepository(conn.Conn())
-    fuzzTraceService := service.NewFuzzTraceService(fuzzTraceRepo)
-    fuzzTraceHandler := api.NewFuzzTraceHandler(fuzzTraceService)
+	fuzzTraceRepo := repository.NewFuzzTraceRepository(conn.Conn())
+	fuzzTraceService := service.NewFuzzTraceService(fuzzTraceRepo)
+	fuzzTraceHandler := transport.NewFuzzTraceHandler(fuzzTraceService)
 
 	router := gin.Default()
 
