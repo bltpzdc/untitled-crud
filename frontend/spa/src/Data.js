@@ -4,6 +4,22 @@
  * really really really needs to be fixed through dictionaries.
  * */
 
+/* TODO(savikin): to jdenv?
+ *  Organize data storage as exported variable/variables
+ *  2 usecases:
+ *    -  local only
+ *    -  remote
+ *        figure out and establish the API boundary between this data
+ *        module and the network interaction module made by gamatacy
+ *
+ *        things to not forget: async? promises? this will have to be async
+ *          one way or another to some extent
+ *
+ *    starting with local only
+ *  Wrap all the data in classes with convenience methods, probably maybe?
+ *    - For all data related things make functions that return localized strings?
+ * */
+
 export let storage = [
   { 
     datatype: 'run',
