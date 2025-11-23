@@ -1,39 +1,51 @@
+// Package model contains the data model (the business logic objects)
 package model
 
-import "fmt"
+import (
+	"time"
 
-var ErrAnalyzerExecutionNotFound = fmt.Errorf("analyzer execution not found")
-
-type Metadata struct {
-	DateSent string
-}
-
-type AnalyzerExecution struct {
-	Id             int
-	Metadata       Metadata
-	LogFile        string
-	FoundTests     []Test
-	ZipArchivePath string
-}
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type FsOperation struct {
 	Type   string
 	Params map[string]any
 }
 
-type FsOperationResult interface{}
-
-type Test struct {
-	TestContent []FsOperation
-	Executions  []FileSystemExecution
+type FuzzerRun struct {
+	ID                              int                               `db:"id"`
+	Timestamp                       time.Time                         `db:"timestamp"`
+	FailureCount                    int                               `db:"failure_count"`
+	Tags                            []string                          `db:"-"`
+	CrashesGroupedByFailedOperation []CrashesGroupedByFailedOperation `db:"-"`
 }
 
-type FileSystemExecution struct {
-	FileSystem      string
-	ExecutionResult []FsOperationResult
+type Tag struct {
+	ID   int    `db:"id"`
+	Name string `db:"name"`
 }
 
-type AnalyzerExecutionBriefView struct {
-	Id   int
-	Meta Metadata
+type CrashesGroupedByFailedOperation struct {
+	ID        int        `db:"id"`
+	RunID     int        `db:"run_id"`
+	Operation string     `db:"operation"`
+	TestCases []TestCase `db:"-"`
+}
+
+type TestCase struct {
+	ID              int             `db:"id"`
+	CrashID         int             `db:"crash_id"`
+	TotalOperations int             `db:"total_operations"`
+	Test            pgtype.Text     `db:"test"`
+	Diff            pgtype.Text     `db:"diff"`
+	FSSummaries     []FsTestSummary `db:"-"`
+}
+
+type FsTestSummary struct {
+	ID              int             `db:"id"`
+	TestCaseID      int             `db:"test_case_id"`
+	FsName          string          `db:"fs_name"`
+	FsSuccessCount  int             `db:"fs_success_count"`
+	FsFailureCount  int             `db:"fs_failure_count"`
+	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
 }
