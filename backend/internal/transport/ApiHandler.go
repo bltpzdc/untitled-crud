@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -32,31 +33,24 @@ func transfrom(input []dto.OpCrash) []model.CrashesGroupedByFailedOperation {
 	return result
 }
 
-// TODO Ii is expected for the user to only input the zip array, so that all the  parsing is happening on the server
 func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
-	var request dto.StoreFuzzerRunRequest
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	file, _ := c.FormFile("file")
+	randNumber := rand.Int()
+	filePath := "./tmp/" + strconv.Itoa(randNumber) + ".zip"
+	err := c.SaveUploadedFile(file, filePath)
+	if err != nil {
 		return
 	}
-	var fuzzerRun = model.FuzzerRun{
-		ID:                              request.ID,
-		Timestamp:                       request.Timestamp,
-		FailureCount:                    request.FailureCount,
-		Tags:                            request.Tags,
-		CrashesGroupedByFailedOperation: transfrom(request.OpCrashes),
+	runId, err := h.service.StoreFuzzerRun(c.Request.Context(), filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 	}
 
-	if err := h.service.StoreFuzzerRun(c.Request.Context(), &fuzzerRun); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"status": "success"})
+	c.JSON(http.StatusCreated, gin.H{"status": "success", "id": runId})
 }
 
-func (h *FuzzTraceHandler) GetFuzzerRun(c *gin.Context) {
+func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
+	panic("implement me")
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
@@ -72,23 +66,9 @@ func (h *FuzzTraceHandler) GetFuzzerRun(c *gin.Context) {
 	c.JSON(http.StatusOK, run)
 }
 
-func (h *FuzzTraceHandler) GetFuzzerRuns(c *gin.Context) {
-	runs, err := h.service.GetRuns(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Runs not found"})
-		return
-	}
-
-	// TODO: answer with an actual DTO object; currently, too much information is transferred by this request
-	c.JSON(http.StatusOK, runs)
+func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
+	panic("implement me")
 }
 
-func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
-	tags, err := h.service.GetAllTags(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Runs not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, tags)
+func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 }

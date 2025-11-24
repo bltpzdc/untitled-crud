@@ -2,8 +2,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -14,7 +12,7 @@ type FsOperation struct {
 
 type FuzzerRun struct {
 	ID                              int                               `db:"id"`
-	Timestamp                       time.Time                         `db:"timestamp"`
+	Timestamp                       string                            `db:"timestamp"`
 	FailureCount                    int                               `db:"failure_count"`
 	Tags                            []string                          `db:"-"`
 	CrashesGroupedByFailedOperation []CrashesGroupedByFailedOperation `db:"-"`

@@ -1,12 +1,17 @@
 package service
 
 import (
+	"archive/zip"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"os"
 
 	"github.com/jinzhu/copier"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
+	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 
 	"github.com/metametamoon/untitled-crud/backend/internal/repository"
 )
@@ -21,16 +26,52 @@ func NewFuzzTraceService(fuzzTraceRepo *repository.FuzzTraceRepository) *FuzzTra
 	}
 }
 
-func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, run *model.FuzzerRun) error {
-	runModel := model.FuzzerRun{}
-	copier.Copy(&runModel, &run)
-
-	if err := s.fuzzTraceRepo.StoreRun(ctx, &runModel); err != nil {
-		return fmt.Errorf("failed to store run: %w", err)
+func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runPath string) (int, error) {
+	archive, err := zip.OpenReader("archive.zip")
+	if err != nil {
+		panic(err)
+	}
+	var metadata *dto.Metadata = nil
+	defer archive.Close()
+	for _, f := range archive.File {
+		if !f.FileInfo().IsDir() && f.Name == "metadata.json" {
+			dstFileName := "./tmp.json"
+			dstFile, err := os.OpenFile(dstFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				panic(err)
+			}
+			srcFile, err := f.Open()
+			if err != nil {
+				panic(err)
+			}
+			if _, err := io.Copy(dstFile, srcFile); err != nil {
+				panic(err)
+			}
+			metadataContent, _ := os.ReadFile(f.Name)
+			var data dto.Metadata
+			err = json.Unmarshal(metadataContent, &data)
+			metadata = &data
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	if metadata == nil {
+		panic("no metadata found")
 	}
 
-	log.Printf("Successfully stored fuzzer run %d with %d tags and %d crashes", run.ID, len(run.Tags), len(run.CrashesGroupedByFailedOperation))
-	return nil
+	runModel := model.FuzzerRun{
+		ID:                              0,
+		Timestamp:                       metadata.Timestamp,
+		FailureCount:                    metadata.FailureCount,
+		Tags:                            metadata.Tags,
+		CrashesGroupedByFailedOperation: make([]model.CrashesGroupedByFailedOperation, 0),
+	}
+
+	if err := s.fuzzTraceRepo.StoreRun(ctx, &runModel); err != nil {
+		return 0, fmt.Errorf("failed to store run: %w", err)
+	}
+	return runModel.ID, nil
 }
 
 func (s *FuzzTraceService) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {

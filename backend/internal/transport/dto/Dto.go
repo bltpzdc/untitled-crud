@@ -7,7 +7,9 @@ import (
 )
 
 type Metadata struct {
-	DateSent string
+	Timestamp    string
+	FailureCount int
+	Tags         []string
 }
 
 type AnalyzerExecution struct {

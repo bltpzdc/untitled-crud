@@ -40,9 +40,16 @@ func main() {
 
 	router.Static("/docs", "./docs")
 
-	router.POST("/run", fuzzTraceHandler.PostFuzzerRun)
-	router.GET("/runs", fuzzTraceHandler.GetFuzzerRuns)
-	router.GET("/run/:id", fuzzTraceHandler.GetFuzzerRun)
+	router.POST("/v1/runs", fuzzTraceHandler.PostFuzzerRun)
+
+	// TODO implement
+	router.GET("/runs/metadatas", fuzzTraceHandler.GetFuzzerRunsMetadatas)
+
+	// TODO implement
+	router.GET("/runs/metadata/:id", fuzzTraceHandler.GetFuzzerRunMetadata)
+
+	// TODO implement
+	router.GET("/runs/archive/:id", fuzzTraceHandler.DownloadArchive)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := router.Run(":8080"); err != nil {
