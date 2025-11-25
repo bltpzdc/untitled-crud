@@ -8,6 +8,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
+	"path/filepath"
+	"strconv"
 
 	"github.com/jinzhu/copier"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
@@ -26,11 +29,49 @@ func NewFuzzTraceService(fuzzTraceRepo *repository.FuzzTraceRepository) *FuzzTra
 	}
 }
 
-func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runPath string) (int, error) {
-	archive, err := zip.OpenReader("archive.zip")
+func copyZip(srcPath, dstPath string) error {
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to open source file %s: %w", srcPath, err)
+	}
+	defer srcFile.Close()
+
+	dstDir := filepath.Dir(dstPath)
+
+	err = os.MkdirAll(dstDir, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create parent directories for %s: %w", dstPath, err)
+	}
+
+	dstFile, err := os.Create(dstPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file %s: %w", dstPath, err)
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("failed to copy file content from %s to %s: %w", srcPath, dstPath, err)
+	}
+
+	err = dstFile.Sync()
+	if err != nil {
+		return fmt.Errorf("failed to sync destination file %s: %w", dstPath, err)
+	}
+
+	return nil
+}
+
+func (s *FuzzTraceService) calculateArchivePath(id int) string {
+	return path.Join(".", "archives", strconv.Itoa(id), "archive.zip")
+}
+
+func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath string) (int, error) {
+	archive, err := zip.OpenReader(runArchivePath)
 	if err != nil {
 		panic(err)
 	}
+
 	var metadata *dto.Metadata = nil
 	defer archive.Close()
 	for _, f := range archive.File {
@@ -71,7 +112,12 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runPath string) (
 	if err := s.fuzzTraceRepo.StoreRun(ctx, &runModel); err != nil {
 		return 0, fmt.Errorf("failed to store run: %w", err)
 	}
-	return runModel.ID, nil
+	id := runModel.ID
+	err = copyZip(runArchivePath, s.calculateArchivePath(id))
+	if err != nil {
+		return 0, fmt.Errorf("failed to store archive: %w", err)
+	}
+	return id, nil
 }
 
 func (s *FuzzTraceService) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {
@@ -88,27 +134,16 @@ func (s *FuzzTraceService) GetRuns(ctx context.Context) ([]model.FuzzerRun, erro
 }
 
 func (s *FuzzTraceService) GetRun(ctx context.Context, runID int) (*model.FuzzerRun, error) {
-	run := model.FuzzerRun{}
-
-	runDTO, err := s.fuzzTraceRepo.GetRun(ctx, runID)
+	run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
 	if err != nil {
 		return nil, err
 	}
-	copier.Copy(&run, &runDTO)
-
 	log.Printf("Successfully got fuzzer run with id %d", runID)
-	return &run, nil
+	return run, nil
 }
 
-func (s *FuzzTraceService) GetAllTags(ctx context.Context) ([]model.Tag, error) {
-	tags := []model.Tag{}
-
-	tagsDTO, err := s.fuzzTraceRepo.GetAllTags(ctx)
-	if err != nil {
-		return nil, err
-	}
-	copier.Copy(tags, tagsDTO)
-
-	log.Printf("Successfully got tags in the amout of %d", len(tags))
-	return tags, nil
+func (s *FuzzTraceService) GetRunArchive(id int) (string, error) {
+	archivePath := s.calculateArchivePath(id)
+	_, err := os.Stat(archivePath)
+	return archivePath, err
 }
