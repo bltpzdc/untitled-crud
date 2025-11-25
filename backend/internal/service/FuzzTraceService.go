@@ -79,21 +79,23 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 			dstFileName := "./tmp.json"
 			dstFile, err := os.OpenFile(dstFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
-				panic(err)
+				return 0, err
 			}
 			srcFile, err := f.Open()
 			if err != nil {
-				panic(err)
+				return 0, err
 			}
 			if _, err := io.Copy(dstFile, srcFile); err != nil {
-				panic(err)
+				return 0, err
 			}
-			metadataContent, _ := os.ReadFile(f.Name)
+			metadataContent, _ := os.ReadFile(dstFile.Name())
+			metastr := string(metadataContent)
+			print(metastr)
 			var data dto.Metadata
 			err = json.Unmarshal(metadataContent, &data)
 			metadata = &data
 			if err != nil {
-				panic(err)
+				return 0, err
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS fuzzer_runs (
     id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    timestamp VARCHAR(30),
     failure_count INTEGER NOT NULL DEFAULT 0
 );
 

@@ -31,7 +31,7 @@ func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "success", "id": runId})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "id": runId})
 }
 
 func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
@@ -42,8 +42,12 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 	}
 
 	run, err := h.service.GetRun(c.Request.Context(), runID)
-	if err != nil {
+	if run == nil && err == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Run not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	metadata := dto.Metadata{
@@ -58,7 +62,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	runs, err := h.service.GetRuns(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Run not found"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	result := make([]dto.Metadata, 0)

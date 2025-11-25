@@ -7,9 +7,9 @@ import (
 )
 
 type Metadata struct {
-	Timestamp    string
-	FailureCount int
-	Tags         []string
+	Timestamp    string   `json:"timestamp"`
+	FailureCount int      `json:"failureCount"`
+	Tags         []string `json:"tags"`
 }
 
 type AnalyzerExecution struct {

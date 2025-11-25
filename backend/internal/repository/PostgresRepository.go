@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
@@ -56,6 +57,7 @@ func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun
 	return nil
 }
 
+// returns (nil, nil) if not found
 func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
 	var run model.FuzzerRun
 
@@ -64,6 +66,9 @@ func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.Fuzzer
         FROM fuzzer_runs WHERE id = $1
     `, id).Scan(&run.ID, &run.Timestamp, &run.FailureCount)
 
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

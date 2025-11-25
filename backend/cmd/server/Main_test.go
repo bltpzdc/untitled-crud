@@ -1,0 +1,111 @@
+package main
+
+import (
+	"archive/zip"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestEndToEnd_RunsCrud(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	body, mw, err := create(t)
+
+	postURL := ts.URL + "/v1/runs"
+	resp, err := http.Post(postURL, mw.FormDataContentType(), body)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var up struct {
+		Id     int    `json:"id"`
+		Status string `json:"status"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&up))
+	require.Greater(t, up.Id, 0)
+	runID := up.Id
+
+	getOneURL := fmt.Sprintf("%s/v1/runs/metadata/%d", ts.URL, runID)
+	resp, err = http.Get(getOneURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var one struct {
+		Timestamp    string   `json:"timestamp"`
+		FailureCount int      `json:"failureCount"`
+		Tags         []string `json:"tags"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&one)
+	require.NoError(t, err)
+	require.Equal(t, 5, one.FailureCount)
+
+	allURL := ts.URL + "/v1/runs/metadatas"
+	resp, err = http.Get(allURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var all []struct {
+		ID       int `json:"id"`
+		Metadata struct {
+			FailureCount int `json:"failureCount"`
+		} `json:"metadata"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&all))
+	require.Len(t, all, 1)
+	require.Equal(t, runID, all[0].ID)
+
+	// 4) GET /runs/archive/{id}
+	arcURL := fmt.Sprintf("%s/runs/archive/%d", ts.URL, runID)
+	resp, err = http.Get(arcURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, "application/zip", resp.Header.Get("Content-Type"))
+
+	data, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	require.NoError(t, err)
+	found := verifyReturnedZipContent(t, zr)
+	require.True(t, found, "metadata.json not found in returned zip")
+}
+
+func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {
+	found := false
+	for _, f := range zr.File {
+		if f.Name == "metadata.json" {
+			rc, err := f.Open()
+			require.NoError(t, err)
+			var m map[string]int
+			require.NoError(t, json.NewDecoder(rc).Decode(&m))
+			require.Equal(t, 4, m["failureCount"])
+			found = true
+			rc.Close()
+		}
+	}
+	return found
+}
+
+func create(t *testing.T) (*bytes.Buffer, *multipart.Writer, error) {
+	zipBuf := makeTestZip(t, 4)
+
+	body := &bytes.Buffer{}
+	mw := multipart.NewWriter(body)
+	part, err := mw.CreateFormFile("file", "run.zip")
+	require.NoError(t, err)
+	_, err = part.Write(zipBuf.Bytes())
+	require.NoError(t, err)
+	require.NoError(t, mw.Close())
+	return body, mw, err
+}
