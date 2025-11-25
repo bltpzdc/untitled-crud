@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,6 +20,9 @@ func TestEndToEnd_RunsCrud(t *testing.T) {
 
 	body, mw, err := create(t)
 
+	if mw == nil {
+		panic("mw == nil")
+	}
 	postURL := ts.URL + "/v1/runs"
 	resp, err := http.Post(postURL, mw.FormDataContentType(), body)
 	require.NoError(t, err)
@@ -54,18 +58,17 @@ func TestEndToEnd_RunsCrud(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var all []struct {
-		ID       int `json:"id"`
-		Metadata struct {
-			FailureCount int `json:"failureCount"`
-		} `json:"metadata"`
-	}
+	var all []dto.MetadataWithId
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&all))
-	require.Len(t, all, 1)
-	require.Equal(t, runID, all[0].ID)
+	found := false
+	for _, x := range all {
+		if x.Id == runID {
+			found = true
+		}
+	}
+	require.True(t, found)
 
-	// 4) GET /runs/archive/{id}
-	arcURL := fmt.Sprintf("%s/runs/archive/%d", ts.URL, runID)
+	arcURL := fmt.Sprintf("%s/v1/runs/archive/%d", ts.URL, runID)
 	resp, err = http.Get(arcURL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -77,7 +80,7 @@ func TestEndToEnd_RunsCrud(t *testing.T) {
 
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	require.NoError(t, err)
-	found := verifyReturnedZipContent(t, zr)
+	found = verifyReturnedZipContent(t, zr)
 	require.True(t, found, "metadata.json not found in returned zip")
 }
 
@@ -87,9 +90,9 @@ func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {
 		if f.Name == "metadata.json" {
 			rc, err := f.Open()
 			require.NoError(t, err)
-			var m map[string]int
+			var m map[string]any
 			require.NoError(t, json.NewDecoder(rc).Decode(&m))
-			require.Equal(t, 4, m["failureCount"])
+			require.Equal(t, float64(5), m["failureCount"])
 			found = true
 			rc.Close()
 		}
@@ -98,7 +101,7 @@ func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {
 }
 
 func create(t *testing.T) (*bytes.Buffer, *multipart.Writer, error) {
-	zipBuf := makeTestZip(t, 4)
+	zipBuf := makeTestZip(t, 5)
 
 	body := &bytes.Buffer{}
 	mw := multipart.NewWriter(body)

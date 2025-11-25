@@ -5,6 +5,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Metadata struct {
+	Timestamp    string   `json:"timestamp"`
+	FailureCount int      `json:"failureCount"`
+	Tags         []string `json:"tags"`
+}
+
 type FsOperation struct {
 	Type   string
 	Params map[string]any

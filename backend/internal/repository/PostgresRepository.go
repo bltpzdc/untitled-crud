@@ -6,14 +6,15 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
 )
 
 type FuzzTraceRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewFuzzTraceRepository(db *pgx.Conn) *FuzzTraceRepository {
+func NewFuzzTraceRepository(db *pgxpool.Pool) *FuzzTraceRepository {
 	return &FuzzTraceRepository{
 		db: db,
 	}

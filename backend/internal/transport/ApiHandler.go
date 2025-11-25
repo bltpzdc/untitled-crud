@@ -65,12 +65,15 @@ func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	result := make([]dto.Metadata, 0)
-	for _, run := range runs {
-		result = append(result, dto.Metadata{
-			Timestamp:    run.Timestamp,
-			FailureCount: run.FailureCount,
-			Tags:         run.Tags,
+	result := make([]dto.MetadataWithId, 0)
+	for id, run := range runs {
+		result = append(result, dto.MetadataWithId{
+			Id: id,
+			Metadata: dto.Metadata{
+				Timestamp:    run.Timestamp,
+				FailureCount: run.FailureCount,
+				Tags:         run.Tags,
+			},
 		})
 	}
 
@@ -86,6 +89,6 @@ func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to open archive"})
 	}
-	c.Header("Content-Type", "archive/zip")
+	c.Header("Content-Type", "application/zip")
 	c.File(file)
 }

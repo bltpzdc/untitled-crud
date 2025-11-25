@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -23,13 +22,7 @@ func main() {
 	}
 	defer database.Close()
 
-	conn, err := database.Pool.Acquire(context.Background())
-	if err != nil {
-		log.Fatal("Failed to acquire connection:", err)
-	}
-	defer conn.Release()
-
-	fuzzTraceRepo := repository.NewFuzzTraceRepository(conn.Conn())
+	fuzzTraceRepo := repository.NewFuzzTraceRepository(database.Pool)
 	fuzzTraceService := service.NewFuzzTraceService(fuzzTraceRepo)
 	fuzzTraceHandler := transport.NewFuzzTraceHandler(fuzzTraceService)
 

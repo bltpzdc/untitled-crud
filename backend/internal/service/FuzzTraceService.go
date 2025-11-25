@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/jinzhu/copier"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 
@@ -122,17 +121,21 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	return id, nil
 }
 
-func (s *FuzzTraceService) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {
-	runs := []model.FuzzerRun{}
-
-	runsResult, err := s.fuzzTraceRepo.GetRuns(ctx)
+func (s *FuzzTraceService) GetRuns(ctx context.Context) (map[int]model.Metadata, error) {
+	runs, err := s.fuzzTraceRepo.GetRuns(ctx)
 	if err != nil {
 		return nil, err
 	}
-	copier.Copy(&runs, &runsResult)
-
+	result := make(map[int]model.Metadata)
+	for _, run := range runs {
+		result[run.ID] = model.Metadata{
+			Timestamp:    run.Timestamp,
+			FailureCount: run.FailureCount,
+			Tags:         run.Tags,
+		}
+	}
 	log.Printf("Successfully got fuzzer runs in the amout of %d", len(runs))
-	return runs, nil
+	return result, nil
 }
 
 func (s *FuzzTraceService) GetRun(ctx context.Context, runID int) (*model.FuzzerRun, error) {

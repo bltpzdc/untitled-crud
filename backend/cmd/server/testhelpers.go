@@ -3,7 +3,6 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
@@ -26,13 +25,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 		database.Close()
 	})
 
-	conn, err := database.Pool.Acquire(context.Background())
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		conn.Release()
-	})
-
-	repo := repository.NewFuzzTraceRepository(conn.Conn())
+	repo := repository.NewFuzzTraceRepository(database.Pool)
 	svc := service.NewFuzzTraceService(repo)
 	h := transport.NewFuzzTraceHandler(svc)
 
@@ -52,7 +45,7 @@ func makeTestZip(t *testing.T, failureCount int) *bytes.Buffer {
 
 	meta := map[string]any{
 		"timestamp":    "2025-11-25T22:00:00Z",
-		"failureCount": 5,
+		"failureCount": failureCount,
 		"tags":         []string{"critical", "not-a-problem"},
 	}
 	data, err := json.Marshal(meta)

@@ -6,6 +6,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type MetadataWithId struct {
+	Id       int      `json:"id"`
+	Metadata Metadata `json:"metadata"`
+}
 type Metadata struct {
 	Timestamp    string   `json:"timestamp"`
 	FailureCount int      `json:"failureCount"`
