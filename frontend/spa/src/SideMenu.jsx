@@ -13,7 +13,7 @@ import OptionsMenu from './OptionsMenu';
 // TODO(savikin): it's repeated in MainMenu, merge
 const drawerWidth = 480;
 
-export default function SideMenu() {
+export default function SideMenu({callback}) {
   return (
     <Drawer
       sx={{
@@ -27,7 +27,7 @@ export default function SideMenu() {
       variant='permanent'
       anchor='left'
     >
-      <SelectContent />
+      <SelectContent callback={callback} />
       <Divider />
 
       {/* Vertical spacer */}

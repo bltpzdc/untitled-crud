@@ -29,7 +29,8 @@ export let storage = [
     analyzer: 'Diffuzzer v.deadbeef',
 
     bugs: [
-      'XHwSwS4tX2U-fpF2paBIfw=='
+      'XHwSwS4tX2U-fpF2paBIfw==',
+      'lCUmLg1qGCqHfdzIIHZY0w=='
     ],
   },
   { 
@@ -40,6 +41,7 @@ export let storage = [
     analyzer: 'Diffuzzer EXPERIMENTAL',
 
     bugs: [
+      'LXBfPRz9NnttomSzB5in3Q=='
     ]
   },
   { 
@@ -50,6 +52,7 @@ export let storage = [
     analyzer: 'Diffuzzer v27',
 
     bugs: [
+      'wWFa_9m7b-xlRufW0UMxUA=='
     ]
   },
 ]
@@ -57,6 +60,7 @@ export let storage = [
 export let storage_bugs = [
   {
     key: 'XHwSwS4tX2U-fpF2paBIfw==',
+    text: 'XHwSwS4tX2U-fpF2paBIfw==',
     optype: 'Read',
     reason: [
       {'Failure':{'operation':'LSEEK','subcall':'lseek','return_code':-1,'errno':22,'strerror':'Invalid argument'}},
@@ -65,6 +69,7 @@ export let storage_bugs = [
   },
   {
     key: 'lCUmLg1qGCqHfdzIIHZY0w==',
+    text: 'lCUmLg1qGCqHfdzIIHZY0w==',
     optype: 'Read',
     reason: [
       {'Failure':{'operation':'LSEEK','subcall':'lseek','return_code':-1,'errno':22,'strerror':'Invalid argument'}},
@@ -73,6 +78,7 @@ export let storage_bugs = [
   },
   {
     key: 'LXBfPRz9NnttomSzB5in3Q==',
+    text: 'LXBfPRz9NnttomSzB5in3Q==',
     optype: 'Read',
     reason: [
       {'Failure':{'operation':'LSEEK','subcall':'lseek','return_code':-1,'errno':22,'strerror':'Invalid argument'}},
@@ -81,6 +87,7 @@ export let storage_bugs = [
   },
   {
     key: 'wWFa_9m7b-xlRufW0UMxUA==',
+    text: 'wWFa_9m7b-xlRufW0UMxUA==',
     optype: 'Read',
     reason: [
       {'Failure':{'operation':'LSEEK','subcall':'lseek','return_code':-1,'errno':22,'strerror':'Invalid argument'}},
@@ -89,5 +96,6 @@ export let storage_bugs = [
   },
 ]
 
-export let tab_list = [
-]
+export function setStorage(argument){
+  storage = argument
+}

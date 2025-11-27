@@ -28,11 +28,12 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import {parseDiff, Diff, Hunk} from 'react-diff-view';
+import 'react-diff-view/style/index.css';
 
 
 import SideMenu from './SideMenu.jsx'
 
-import { storage, storage_bugs, tab_list } from './Data.js';
+import { storage, storage_bugs, setStorage } from './Data.js';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -97,6 +98,12 @@ function renderFile({oldRevision, newRevision, type, hunks}) {
 
 export default function MainMenu() {
   const [value, setValue] = React.useState(0);
+  //const [tablist, setTablist] = React.useState([...storage, ...storage_bugs]);
+  const [tablist, setTablist] = React.useState([]);
+
+  const tablistAppend = (x) => {
+    setTablist([...tablist, x])
+  };
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -118,18 +125,14 @@ export default function MainMenu() {
           variant='fullWidth'
         >
         {
-          tab_list.map((item, idx) => (
-            <Tab label={item.text} key={index} {...a11yProps(index)} />
+          tablist.map((item, idx) => (
+            <Tab label={item.text} key={idx} {...a11yProps(idx)} />
           ))
         }
-          /* old version:
-            {storage.map((item, index) => (
-            <Tab label={item.text} key={index} {...a11yProps(index)} />
-          ))}*/
         </Tabs>
       </AppBar>
 
-      <SideMenu/>
+      <SideMenu callback={tablistAppend} />
 
       <Box
         component='main'
@@ -147,10 +150,11 @@ export default function MainMenu() {
          in accordance to something i have seen once somewhere in the docs
          hence: might be neither needed nor harmless*/}
         <Toolbar/>
-        {storage.map((item, index) => (
+
+        {tablist.map((item, index) => (
           <TabPanel component={'span'} value={value} index={index} key={index}>
             {
-              (console.log(item) || item.datatype == 'run') ?
+              (item.datatype == 'run') ?
               <>
               <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
                 <Grid size={6}>
@@ -169,7 +173,10 @@ export default function MainMenu() {
                   Анализатор: {item.analyzer}
                 </Grid>
                 <Grid size={6}>
-                  <Button variant='text'>Удалить испытание</Button>
+                  <Button 
+                    variant='text'
+                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
+                  >Закрыть испытание</Button>
                 </Grid>
               </Grid>
               <Accordion>
@@ -192,7 +199,9 @@ export default function MainMenu() {
                         console.log(item), console.log(inner_item), console.log(inner_item.key);
                         return (
                           <ListItem>
-                            <ListItemButton>
+                            <ListItemButton
+                              onClick={()=>{setTablist([...tablist, inner_item])}}
+                            >
                               <ListItemText key={inner_item.key} primary={inner_item.key} />
                             </ListItemButton>
                           </ListItem>
@@ -204,7 +213,17 @@ export default function MainMenu() {
                 </AccordionDetails>
               </Accordion>
               </>
-              : parseDiff(diff).map(renderFile)
+              : 
+              <>
+                <Grid size={6}>
+                  <Button 
+                    variant='text'
+                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
+                  >Закрыть баг</Button>
+                </Grid>
+
+                {parseDiff(diff).map(renderFile)}
+              </>
             }
           </TabPanel>
         ))}
