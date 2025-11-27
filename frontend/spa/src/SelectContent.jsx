@@ -18,6 +18,7 @@ import SmartphoneRoundedIcon from '@mui/icons-material/SmartphoneRounded';
 import ConstructionRoundedIcon from '@mui/icons-material/ConstructionRounded';
 import SideMenuContent from './SideMenuContent';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -52,7 +53,7 @@ function a11yProps(index) {
   };
 }
 
-export default function SelectContent() {
+export default function SelectContent({callback}) {
   const [value, setValue] = React.useState(0);
 
   const handleChange = (event, newvalue) => {
@@ -67,10 +68,17 @@ export default function SelectContent() {
       </Tabs>
 
       <TabPanel value={value} index={0}>
-        <SideMenuContent />
+        <SideMenuContent callback={callback}/>
       </TabPanel>
       <TabPanel value={value} index={1}>
-        TODO
+        <Button 
+          variant='text'
+          onClick={ ()=>{
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.click();
+          }}
+        >Загрузить ZIP</Button>
       </TabPanel>
     </Box>
   );

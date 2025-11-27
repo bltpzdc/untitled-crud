@@ -15,7 +15,7 @@ import HelpRoundedIcon from '@mui/icons-material/HelpRounded';
 
 import { storage } from './Data.js';
 
-export default function SideMenuContent() {
+export default function SideMenuContent({callback}) {
   return (
     <Stack
       sx={{
@@ -27,7 +27,9 @@ export default function SideMenuContent() {
           .filter((x) => x.datatype == 'run')
           .map((item, index) => (
           <ListItem key={index}>
-            <ListItemButton >
+            <ListItemButton
+              onClick={() => {callback(item);}}
+            >
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
