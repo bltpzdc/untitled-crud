@@ -38,7 +38,7 @@ services:
     build: ./frontend
     restart: always
     ports:
-      - "0.0.0.0:1337:1337"
+      - "0.0.0.0:1337:80"
 
 volumes:
   untitled-crud-test:

@@ -7,5 +7,5 @@ COPY spa/src ./src/
 RUN npx vite build
 
 FROM nginx:1.29.3
-
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/dist /var/www/diffuzzer/
