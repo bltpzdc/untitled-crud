@@ -179,10 +179,10 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 				fsSummary.TestCaseID = testCase.ID
 
 				err := r.db.QueryRow(ctx,
-					`INSERT INTO fs_test_summaries (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time) 
-                     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+					`INSERT INTO fs_test_summaries (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace) 
+                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
 					fsSummary.TestCaseID, fsSummary.FsName, fsSummary.FsSuccessCount,
-					fsSummary.FsFailureCount, fsSummary.FsExecutionTime,
+					fsSummary.FsFailureCount, fsSummary.FsExecutionTime, fsSummary.FsTrace,
 				).Scan(&fsSummary.ID)
 				if err != nil {
 					return err
@@ -259,7 +259,7 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
 
 func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCaseID int) ([]model.FsTestSummary, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time FROM fs_test_summaries WHERE test_case_id = $1",
+		"SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace FROM fs_test_summaries WHERE test_case_id = $1",
 		testCaseID,
 	)
 	if err != nil {
@@ -271,7 +271,7 @@ func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCa
 	for rows.Next() {
 		var fsSummary model.FsTestSummary
 		if err := rows.Scan(&fsSummary.ID, &fsSummary.FsName, &fsSummary.FsSuccessCount,
-			&fsSummary.FsFailureCount, &fsSummary.FsExecutionTime); err != nil {
+			&fsSummary.FsFailureCount, &fsSummary.FsExecutionTime, &fsSummary.FsTrace); err != nil {
 			return nil, err
 		}
 		fsSummaries = append(fsSummaries, fsSummary)
