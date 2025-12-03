@@ -77,4 +77,5 @@ type FsTestSummary struct {
 	FsSuccessCount  int
 	FsFailureCount  int
 	FsExecutionTime pgtype.Interval
+	FsTrace         pgtype.Text
 }
