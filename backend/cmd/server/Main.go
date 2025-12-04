@@ -5,8 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
-	"github.com/metametamoon/untitled-crud/backend/internal/db"
 
+	// _ "github.com/metametamoon/untitled-crud/backend/cmd/server/docs"
+
+	"github.com/metametamoon/untitled-crud/backend/internal/db"
 	"github.com/metametamoon/untitled-crud/backend/internal/repository"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport"
@@ -15,6 +17,12 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title Untitled CRUD API
+// @version 1.0
+// @description API documentation for Untitled CRUD Backend
+
+// @host localhost:8080
+// @BasePath /
 func main() {
 	database, err := db.NewDB()
 	if err != nil {
@@ -30,13 +38,15 @@ func main() {
 
 	url := ginSwagger.URL("/docs/swagger.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
-
 	router.Static("/docs", "./docs")
 
-	router.POST("/v1/runs", fuzzTraceHandler.PostFuzzerRun)
-	router.GET("/runs/metadatas", fuzzTraceHandler.GetFuzzerRunsMetadatas)
-	router.GET("/runs/metadata/:id", fuzzTraceHandler.GetFuzzerRunMetadata)
-	router.GET("/runs/archive/:id", fuzzTraceHandler.DownloadArchive)
+	v1 := router.Group("/v1")
+	{
+		v1.POST("/runs", fuzzTraceHandler.PostFuzzerRun)
+		v1.GET("/runs/metadatas", fuzzTraceHandler.GetFuzzerRunsMetadatas)
+		v1.GET("/runs/metadatas/:id", fuzzTraceHandler.GetFuzzerRunMetadata)
+		v1.GET("/runs/archives/:id", fuzzTraceHandler.DownloadArchive)
+	}
 
 	log.Println("Server running on http://localhost:8080")
 	if err := router.Run(":8080"); err != nil {

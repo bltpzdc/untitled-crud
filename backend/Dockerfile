@@ -8,7 +8,7 @@ RUN go build -o /app/diffuzzer .
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN export PATH=$(go env GOPATH)/bin:$PATH
-RUN swag init -g Main.go -o /app/docs
+RUN cd ../../ && swag init -g cmd/server/Main.go -o /app/docs
 
 FROM scratch
 
