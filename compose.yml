@@ -4,6 +4,8 @@ services:
     image: postgres:17
     restart: always
     shm_size: 128mb
+    ports:
+      - "5432:5432"
     volumes:
       - "untitled-crud-test:/var/lib/postgresql/data"
       - ./backend/internal/db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -23,6 +25,8 @@ services:
     container_name: diffuzzer_backend
     build: ./backend
     restart: always
+    ports:
+      - "8080:8080"
     environment:
       DB_USER: fuzzer_user
       DB_PASSWORD: fuzzer_password
