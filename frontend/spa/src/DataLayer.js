@@ -1,13 +1,12 @@
 class DiffuzzerStorage {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl;
+  constructor() {
     this.runsById = {};
     this.bugsByKey = {};
   }
 
   // Внутренний метод для загрузки JSON
   async _fetchJson(path) {
-    const res = await fetch(this.baseUrl + path);
+    const res = await fetch(path);
     if (!res.ok) {
       throw new Error(`Request failed with status ${res.status}`);
     }
@@ -108,16 +107,16 @@ class DiffuzzerStorage {
   }
 }
 
-const storage = new DiffuzzerStorage('http://diffuzzer.savikin.ru.');
+export const datalayer = new DiffuzzerStorage();
 
-async function main() {
-  try {
-    const runs = await storage.get_runs();
-    console.log('Испытания:', runs);
-  } catch (err) {
-    console.error('Ошибка при получении испытаний:', err);
-  }
-}
-
-main();
-
+//async function main() {
+//  try {
+//    const runs = await storage.get_runs();
+//    console.log('Испытания:', runs);
+//  } catch (err) {
+//    console.error('Ошибка при получении испытаний:', err);
+//  }
+//}
+//
+//main();
+//

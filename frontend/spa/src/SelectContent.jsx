@@ -16,9 +16,10 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
 import SmartphoneRoundedIcon from '@mui/icons-material/SmartphoneRounded';
 import ConstructionRoundedIcon from '@mui/icons-material/ConstructionRounded';
-import SideMenuContent from './SideMenuContent';
+import SideMenuContent from './SideMenuContent.jsx';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import { datalayer } from './DataLayer.js';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -56,6 +57,8 @@ function a11yProps(index) {
 export default function SelectContent({callback}) {
   const [value, setValue] = React.useState(0);
 
+  const [_uploadDummy, setUploadDummy] = React.useState(null);
+
   const handleChange = (event, newvalue) => {
     setValue(newvalue);
   };
@@ -74,8 +77,14 @@ export default function SelectContent({callback}) {
         <Button 
           variant='text'
           onClick={ ()=>{
-            let input = document.createElement('input');
+            console.log('Clicked');
+            const input = document.createElement('input');
             input.type = 'file';
+            input.onchange = e => {
+              console.log('On change');
+              const file = e.target.files[0];
+              datalayer.upload_zip(file).then(() => {setUploadDummy(null)});
+            }
             input.click();
           }}
         >Загрузить ZIP</Button>

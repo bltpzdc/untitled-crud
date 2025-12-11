@@ -20,6 +20,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - diffuzzer_network
 
   diffuzzer_backend:
     container_name: diffuzzer_backend
@@ -36,6 +38,8 @@ services:
     depends_on:
       diffuzzer_db:
         condition: service_healthy
+    networks:
+      - diffuzzer_network
 
   diffuzzer_nginx:
     container_name: diffuzzer_nginx
@@ -43,6 +47,15 @@ services:
     restart: always
     ports:
       - "0.0.0.0:1337:80"
+    networks:
+      - diffuzzer_network
+    depends_on:
+      diffuzzer_backend:
+        condition: service_started
 
 volumes:
   untitled-crud-test:
+
+networks:
+  diffuzzer_network:
+    driver: bridge

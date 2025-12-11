@@ -6,9 +6,9 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import SelectContent from './SelectContent';
-import SideMenuContent from './SideMenuContent';
-import OptionsMenu from './OptionsMenu';
+import SelectContent from './SelectContent.jsx';
+import SideMenuContent from './SideMenuContent.jsx';
+import OptionsMenu from './OptionsMenu.jsx';
 
 // TODO(savikin): it's repeated in MainMenu, merge
 const drawerWidth = 480;
