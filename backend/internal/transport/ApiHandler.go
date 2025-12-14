@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 )
@@ -78,6 +79,29 @@ func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func (h *FuzzTraceHandler) GetFuzzerRunDetails(c *gin.Context) {
+	runID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	run, err := h.service.GetRun(c.Request.Context(), runID)
+	if run == nil && err == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Run not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var details dto.RunDetailsWithId
+	details.Id = runID
+	copier.Copy(&details.Crashes, &run.CrashesGroupedByFailedOperation)
+
+	c.JSON(http.StatusOK, details)
 }
 
 func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {

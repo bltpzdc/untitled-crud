@@ -16,6 +16,11 @@ type Metadata struct {
 	Tags         []string `json:"tags"`
 }
 
+type RunDetailsWithId struct {
+	Id      int                               `json:"id"`
+	Crashes []CrashesGroupedByFailedOperation `json:"crashes"`
+}
+
 type AnalyzerExecution struct {
 	Id             int
 	Metadata       Metadata
@@ -46,7 +51,7 @@ type StoreFuzzerRunRequest struct {
 	Timestamp    time.Time
 	FailureCount int
 	Tags         []string
-	OpCrashes    []OpCrash
+	OpCrashes    []CrashesGroupedByFailedOperation
 }
 
 type Tag struct {
@@ -54,7 +59,7 @@ type Tag struct {
 	Name string
 }
 
-type OpCrash struct {
+type CrashesGroupedByFailedOperation struct {
 	ID        int
 	RunID     int
 	Operation string
