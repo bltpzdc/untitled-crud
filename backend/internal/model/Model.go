@@ -41,7 +41,7 @@ type TestCase struct {
 	CrashID         int             `db:"crash_id"`
 	TotalOperations int             `db:"total_operations"`
 	Test            pgtype.Text     `db:"test"`
-	Diff            pgtype.Text     `db:"diff"`
+	Diff            pgtype.Text     `db:"diff"` // not needed
 	FSSummaries     []FsTestSummary `db:"-"`
 }
 

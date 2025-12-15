@@ -8,17 +8,12 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 	"github.com/stretchr/testify/require"
 )
-
-// export DB_USER=fuzzer_user
-// export DB_PASSWORD=fuzzer_password
-// export DB_PORT=5432
-// export DB_HOST=localhost
-// export DB_NAME=fuzzer_db
 
 func TestEndToEnd_RunsCrud(t *testing.T) {
 	ts := newTestServer(t)
@@ -57,7 +52,6 @@ func TestEndToEnd_RunsCrud(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&one)
 	require.NoError(t, err)
 	require.Equal(t, 5, one.FailureCount)
-
 
 	allURL := ts.URL + "/v1/runs/metadatas"
 	resp, err = http.Get(allURL)
@@ -105,7 +99,7 @@ func TestEndToEnd_RunsDetails(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	
+
 	var up struct {
 		Id     int    `json:"id"`
 		Status string `json:"status"`
@@ -123,6 +117,41 @@ func TestEndToEnd_RunsDetails(t *testing.T) {
 	var details dto.RunDetailsWithId
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
 	require.Equal(t, details.Id, runID)
+}
+
+func TestEndToEnd_seriousTest(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	body, mw, err := readSampleData(t)
+
+	if mw == nil {
+		panic("mw == nil")
+	}
+	postURL := ts.URL + "/v1/runs"
+	resp, err := http.Post(postURL, mw.FormDataContentType(), body)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var up struct {
+		Id     int    `json:"id"`
+		Status string `json:"status"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&up))
+	require.Greater(t, up.Id, 0)
+	runID := up.Id
+
+	getDetailsURL := fmt.Sprintf("%s/v1/runs/details/%d", ts.URL, runID)
+	resp, err = http.Get(getDetailsURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var details dto.RunDetailsWithId
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
+	require.Equal(t, details.Id, runID)
+
 }
 
 func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {
@@ -149,6 +178,18 @@ func create(t *testing.T, failureCount int) (*bytes.Buffer, *multipart.Writer, e
 	part, err := mw.CreateFormFile("file", "run.zip")
 	require.NoError(t, err)
 	_, err = part.Write(zipBuf.Bytes())
+	require.NoError(t, err)
+	require.NoError(t, mw.Close())
+	return body, mw, err
+}
+
+func readSampleData(t *testing.T) (*bytes.Buffer, *multipart.Writer, error) {
+	zipBuf, err := os.ReadFile("./backend/data/sample-run-extracted/sample-run-extracted.zip")
+	body := &bytes.Buffer{}
+	mw := multipart.NewWriter(body)
+	part, err := mw.CreateFormFile("file", "run.zip")
+	require.NoError(t, err)
+	_, err = part.Write(zipBuf)
 	require.NoError(t, err)
 	require.NoError(t, mw.Close())
 	return body, mw, err

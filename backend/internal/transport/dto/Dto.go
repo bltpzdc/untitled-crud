@@ -71,7 +71,6 @@ type TestCase struct {
 	CrashID         int
 	TotalOperations int
 	Test            pgtype.Text
-	Diff            pgtype.Text
 	FSSummaries     []FsTestSummary
 }
 
