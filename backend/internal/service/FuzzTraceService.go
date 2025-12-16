@@ -141,38 +141,41 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	items, _ := os.ReadDir(tmpDir)
 	crashesGroupedByFailedOperations := make([]model.CrashesGroupedByFailedOperation, 0)
 	for _, f := range items {
+		log.Printf("Found item dir %s", f.Name())
 		if !f.IsDir() && f.Name() == "metadata.json" {
 			_, err2 := s.extractMetadata(f, tmpDir, metadata)
 			if err2 != nil {
 				return 0, err2
 			}
 		}
-		if f.IsDir() && f.Name() == "crashes" {
+		if f.IsDir() && strings.HasPrefix(f.Name(), "trace-") {
+			operationDirSplited := strings.Split(f.Name(), "-")
+			operation := operationDirSplited[1]
+			crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
+				ID:        0,
+				RunID:     0,  // yet unknown
+				Operation: operation,
+				TestCases: nil,
+			}
+
+			testCases := make([]model.TestCase, 0)
+
 			groups, _ := os.ReadDir(filepath.Join(tmpDir, f.Name()))
 			for _, group := range groups {
+				log.Printf("Found group %s", group.Name())
 				if group.IsDir() {
-					crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
-						ID:        0,
-						RunID:     0,  // yet unknown
-						Operation: "", // might be extracted from the folder name, but why
-						TestCases: nil,
+					testArtifactsDir := filepath.Join(tmpDir, f.Name(), group.Name())
+
+					testCase, err := s.extractTestCase(testArtifactsDir)
+					if err != nil {
+						return 0, err
 					}
-					testCases := make([]model.TestCase, 0)
-					testFolders, _ := os.ReadDir(filepath.Join(tmpDir, f.Name(), group.Name()))
-					for _, testFolder := range testFolders {
-						if testFolder.IsDir() {
-							testDir := filepath.Join(tmpDir, f.Name(), group.Name(), testFolder.Name())
-							testCase, err := s.extractTestCase(testDir)
-							if err != nil {
-								return 0, err
-							}
-							testCases = append(testCases, testCase)
-						}
-					}
-					crashesGroupedBySpecificOperation.TestCases = testCases
-					crashesGroupedByFailedOperations = append(crashesGroupedByFailedOperations, crashesGroupedBySpecificOperation)
+					testCases = append(testCases, testCase)
 				}
 			}
+			
+			crashesGroupedBySpecificOperation.TestCases = testCases
+			crashesGroupedByFailedOperations = append(crashesGroupedByFailedOperations, crashesGroupedBySpecificOperation)
 		}
 	}
 
