@@ -141,7 +141,6 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	items, _ := os.ReadDir(tmpDir)
 	crashesGroupedByFailedOperations := make([]model.CrashesGroupedByFailedOperation, 0)
 	for _, f := range items {
-		log.Printf("Found item dir %s", f.Name())
 		if !f.IsDir() && f.Name() == "metadata.json" {
 			_, err2 := s.extractMetadata(f, tmpDir, metadata)
 			if err2 != nil {
@@ -162,7 +161,6 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 
 			groups, _ := os.ReadDir(filepath.Join(tmpDir, f.Name()))
 			for _, group := range groups {
-				log.Printf("Found group %s", group.Name())
 				if group.IsDir() {
 					testArtifactsDir := filepath.Join(tmpDir, f.Name(), group.Name())
 
@@ -233,11 +231,11 @@ func (s *FuzzTraceService) extractTestCase(testDir string) (model.TestCase, erro
 			continue
 		}
 		if testFile.Name() == "test.json" {
-
 			contentBytes, err := os.ReadFile(filepath.Join(testDir, testFile.Name()))
 			if err != nil {
 				return model.TestCase{}, fmt.Errorf("failed to read test.json file: %w", err)
 			}
+
 			testCase.Test = pgtype.Text{
 				String: string(contentBytes),
 				Valid:  true,

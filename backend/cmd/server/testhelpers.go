@@ -15,7 +15,9 @@ import (
 	"github.com/metametamoon/untitled-crud/backend/internal/repository"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport"
+	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 	"github.com/stretchr/testify/require"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func newTestServer(t *testing.T) *httptest.Server {
@@ -169,6 +171,83 @@ func makeFsTrace(fsName string, operations []string, results []bool) ResponseDat
     }
 }
 
+type TraceInDB struct {
+    SuccessN json.RawMessage `json:"success_n"`
+    FailureN json.RawMessage `json:"failure_n"`
+    Rows     json.RawMessage `json:"rows"`
+}
+
+type RowDiff struct {
+    Index         int    `json:"index"`
+    Operation     string `json:"operation"`
+    FS1Result     string `json:"fs1_result"`
+    FS2Result     string `json:"fs2_result"`
+}
+
+func compareFsTraces(t *testing.T, fsTrace1, fsTrace2 pgtype.Text) ([]RowDiff) {
+	var diffs []RowDiff
+
+	var fsTraceJson1, fsTraceJson2 TraceInDB
+	err := json.Unmarshal([]byte(fsTrace1.String), &fsTraceJson1)
+	require.NoError(t, err)
+	err = json.Unmarshal([]byte(fsTrace2.String), &fsTraceJson2)
+	require.NoError(t, err)
+
+	var rowsArray1, rowsArray2 []json.RawMessage
+	err = json.Unmarshal(fsTraceJson1.Rows, &rowsArray1)
+	require.NoError(t, err)
+	err = json.Unmarshal(fsTraceJson2.Rows, &rowsArray2)
+	require.NoError(t, err)
+
+    if len(rowsArray1) != len(rowsArray2) {
+        return nil
+    }
+     
+    opCount := len(rowsArray1)
+    
+    for i := 0; i < opCount; i++ {
+		var data1, data2 map[string]interface{}
+		err = json.Unmarshal(rowsArray1[i], &data1)
+		require.NoError(t, err)
+		err = json.Unmarshal(rowsArray2[i], &data2)
+		require.NoError(t, err)
+		
+		result1, opData1 := extractResult(data1)
+		result2, opData2 := extractResult(data2)
+
+		if result1 == result2 {
+			continue
+		}
+		
+		diff := RowDiff{
+			Index:     i,
+			Operation: getOperation(opData1, opData2),
+			FS1Result: result1,
+			FS2Result: result2,
+		}
+		diffs = append(diffs, diff)
+    }
+    
+    return diffs
+}
+
+func extractResult(row map[string]interface{}) (string, map[string]interface{}) {
+    for key, value := range row {
+        return key, value.(map[string]interface{})
+    }
+    return "", nil
+}
+
+func getOperation(data1, data2 map[string]interface{}) string {
+    op1, _ := data1["operation"].(string)
+    op2, _ := data2["operation"].(string)
+    
+    if op1 == op2 {
+        return op1
+    }
+    return ""
+}
+
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 func randomSeq(n int) string {
     b := make([]rune, n)
@@ -189,4 +268,21 @@ func generateRandomOperationsAndResults() ([]string, []bool) {
     }
     
     return operations, results
+}
+
+func validateRunDetails(t *testing.T, details *dto.RunDetailsWithId) {
+	for _, crash := range details.Crashes {
+		failedOperation := crash.Operation
+		for _, testCase := range crash.TestCases {
+			fsSummaries := make([]dto.FsTestSummary, 2)
+			for k, fsSummary := range testCase.FSSummaries {
+				require.Less(t, k, 3)
+				fsSummaries[k] = fsSummary
+			}
+
+			traceDiffs := compareFsTraces(t, fsSummaries[0].FsTrace, fsSummaries[1].FsTrace)
+			require.Greater(t, len(traceDiffs), 0)
+			require.Equal(t, strings.ToUpper(failedOperation), traceDiffs[0].Operation)
+		}
+	}
 }

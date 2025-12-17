@@ -117,6 +117,7 @@ func TestEndToEnd_RunsDetails(t *testing.T) {
 	var details dto.RunDetailsWithId
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
 	require.Equal(t, details.Id, runID)
+	validateRunDetails(t, &details)
 }
 
 func TestEndToEnd_seriousTest(t *testing.T) {
@@ -151,7 +152,7 @@ func TestEndToEnd_seriousTest(t *testing.T) {
 	var details dto.RunDetailsWithId
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
 	require.Equal(t, details.Id, runID)
-
+	validateRunDetails(t, &details)
 }
 
 func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {
@@ -184,7 +185,7 @@ func create(t *testing.T, failureCount int) (*bytes.Buffer, *multipart.Writer, e
 }
 
 func readSampleData(t *testing.T) (*bytes.Buffer, *multipart.Writer, error) {
-	zipBuf, err := os.ReadFile("./backend/data/sample-run-extracted/sample-run-extracted.zip")
+	zipBuf, err := os.ReadFile("../../data/sample-run-extracted/sample-run-extracted.zip")
 	body := &bytes.Buffer{}
 	mw := multipart.NewWriter(body)
 	part, err := mw.CreateFormFile("file", "run.zip")
