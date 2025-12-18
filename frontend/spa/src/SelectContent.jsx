@@ -64,11 +64,31 @@ export default function SelectContent({callback}) {
   };
 
   return (
-    <Box style={{ width:'100%' }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={value} onChange={handleChange} aria-label='Select mode'>
-        <Tab style={{width:'90%'}} label='Список испытаний' {...a11yProps(0)} />
-        <Tab style={{width:'10%'}} label='+' {...a11yProps(1)} />
-      </Tabs>
+        <Box style={{ width: '100%' }} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs
+  value={value}
+  onChange={handleChange}
+  aria-label="Select mode"
+  variant="standard"
+>
+  <Tab
+    label="Список испытаний"
+    {...a11yProps(0)}
+    sx={{
+      flexGrow: 1,
+      flexShrink: 1,
+    }}
+  />
+  <Tab
+    label="+"
+    {...a11yProps(1)}
+    sx={{
+    width: 36,
+    minWidth: 36,
+    maxWidth: 36,
+    }}
+  />
+</Tabs>
 
       <TabPanel value={value} index={0}>
         <SideMenuContent callback={callback}/>

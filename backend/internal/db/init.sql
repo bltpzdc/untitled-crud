@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS fs_test_summaries (
     fs_name VARCHAR(10) NOT NULL,
     fs_success_count INTEGER NOT NULL DEFAULT 0,
     fs_failure_count INTEGER NOT NULL DEFAULT 0,
-    fs_execution_time INTERVAL
+    fs_execution_time INTERVAL,
+    fs_trace JSONB
 );
 
 

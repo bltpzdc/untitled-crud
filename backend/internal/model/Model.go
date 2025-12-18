@@ -52,4 +52,5 @@ type FsTestSummary struct {
 	FsSuccessCount  int             `db:"fs_success_count"`
 	FsFailureCount  int             `db:"fs_failure_count"`
 	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
+	FsTrace         pgtype.Text     `db:"fs_trace"`
 }

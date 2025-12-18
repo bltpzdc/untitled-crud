@@ -109,6 +109,7 @@ export default function MainMenu() {
     setValue(newValue);
   };
 
+
   return (
     <>
       <AppBar 
@@ -122,14 +123,30 @@ export default function MainMenu() {
           value={value}
           onChange={handleChange}
           textColor='inherit'
-          variant='fullWidth'
+          variant='scrollable'
+          scrollButtons={false}
         >
-        {
-          tablist.map((item, idx) => (
-            <Tab label={item.text} key={idx} {...a11yProps(idx)} />
-          ))
-        }
-        </Tabs>
+        {tablist.map((item, idx) => (
+        <Tab
+          label={item.text}
+          key={idx}
+          {...a11yProps(idx)}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 400,
+            minHeight: 40,
+            height: 40,
+            paddingTop: 0,
+            paddingBottom: 0,
+            alignItems: 'flex-start',        // прижать содержимое вверх
+            '& > *': {
+              transform: 'translateY(-5px)', // сдвинуть текст на 5px вверх
+            },
+          }}
+        />
+      ))}
+    </Tabs>
+
       </AppBar>
 
       <SideMenu callback={tablistAppend} />
