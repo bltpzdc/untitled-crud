@@ -26,7 +26,8 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-
+import CloseIcon from '@mui/icons-material/Close';
+import IconButton from '@mui/material/IconButton'; 
 import {parseDiff, Diff, Hunk} from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 
@@ -128,7 +129,6 @@ export default function MainMenu() {
         >
         {tablist.map((item, idx) => (
         <Tab
-          label={item.text}
           key={idx}
           {...a11yProps(idx)}
           sx={{
@@ -138,11 +138,38 @@ export default function MainMenu() {
             height: 40,
             paddingTop: 0,
             paddingBottom: 0,
-            alignItems: 'flex-start',        // прижать содержимое вверх
-            '& > *': {
-              transform: 'translateY(-5px)', // сдвинуть текст на 5px вверх
-            },
+            alignItems: 'flex-start',
+            display: 'flex',
+          justifyContent: 'space-between' 
           }}
+          label={
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span>{item.text}</span>
+              <IconButton
+                aria-label='close tab'
+                size='small'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTablist((tabs) => {
+                    const newTabs = tabs.filter((_, i) => i !== idx);
+                    // Обновляем выбранный индекс, если нужно
+                    if (value === idx) {
+                      if (idx === 0) {
+                        setValue(0);
+                      } else {
+                        setValue(idx - 1);
+                      }
+                    } else if (value > idx) {
+                      setValue(value - 1);
+                    }
+                    return newTabs;
+                  });
+                }}
+              >
+                <CloseIcon fontSize='small' />
+              </IconButton>
+            </div>
+          }
         />
       ))}
     </Tabs>
@@ -156,7 +183,6 @@ export default function MainMenu() {
         sx={{
           flexGrow: 1,
           minHeight: '100vh',
-          minWidth: '100vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'auto',
@@ -173,29 +199,95 @@ export default function MainMenu() {
             {
               (item.datatype == 'run') ?
               <>
-              <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-                <Grid size={6}>
-                  Дата и время: {item.run_time.toString()}
-                </Grid>
-                <Grid size={6}>
-                  Комментарий: <TextField id='standard-basic' label='Standard' variant='standard' />
-                </Grid>
-                <Grid size={6}>
-                  Файловые системы: {item.fstype.join(', ')}
-                </Grid>
-                <Grid size={6}>
-                  Теги:
-                </Grid>
-                <Grid size={6}>
-                  Анализатор: {item.analyzer}
-                </Grid>
-                <Grid size={6}>
-                  <Button 
-                    variant='text'
-                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
-                  >Закрыть испытание</Button>
-                </Grid>
-              </Grid>
+              <Box sx={{ mt: 4, mb: 3, px: 6, width: '100%' }}>
+                <Box sx={{ display: 'flex', mb: 2 }}>
+                  {/* Левая колонка: дата/ФС/анализатор */}
+                  <Box sx={{ flex: 1, mr: 6 }}>
+                    {/* Дата и время */}
+                    <Box sx={{ display: 'flex', mb: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ width: 140 }}
+                      >
+                        Дата и время:
+                      </Typography>
+                      <Typography variant="body1">
+                        {
+                          item.run_time.toLocaleString('ru-RU', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Typography>
+                    </Box>
+
+                    {/* Файловые системы */}
+                    <Box sx={{ display: 'flex', mb: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ width: 140 }}
+                      >
+                        Файловые системы:
+                      </Typography>
+                      <Typography variant="body1">
+                        {item.fstype.join(', ')}
+                      </Typography>
+                    </Box>
+
+                    {/* Анализатор */}
+                    <Box sx={{ display: 'flex', mb: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ width: 140 }}
+                      >
+                        Анализатор:
+                      </Typography>
+                      <Typography variant="body1">
+                        {item.analyzer}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Правая колонка: комментарий + теги */}
+                  <Box sx={{ flex: 1 }}>
+                    {/* Комментарий */}
+                    <Box sx={{ display: 'flex', mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ width: 110, lineHeight: '40px' }}
+                      >
+                        Комментарий
+                      </Typography>
+                      <TextField
+                        size="small"
+                        variant="outlined"
+                        fullWidth
+                        placeholder="Комментарий"
+                      />
+                    </Box>
+
+                    {/* Теги */}
+                    <Box sx={{ display: 'flex' }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ width: 110, lineHeight: '32px' }}
+                      >
+                        Теги:
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {/* сюда потом добавишь Chip'ы и кнопку + */}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
               <Accordion>
                 <AccordionSummary
                   expandIcon={<ArrowDownwardIcon />}
@@ -232,14 +324,7 @@ export default function MainMenu() {
               </>
               : 
               <>
-                <Grid size={6}>
-                  <Button 
-                    variant='text'
-                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
-                  >Закрыть баг</Button>
-                </Grid>
 
-                {parseDiff(diff).map(renderFile)}
               </>
             }
           </TabPanel>
