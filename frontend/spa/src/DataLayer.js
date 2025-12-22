@@ -1,3 +1,5 @@
+const LOCAL_MODE = false;
+
 class DiffuzzerStorage {
   constructor() {
     this.runsById = {};
@@ -26,23 +28,47 @@ class DiffuzzerStorage {
   //   bugs: string[]   // массив хэшей вида 'XHwSwS4tX2U-fpF2paBIfw=='
   // }
   async get_runs() {
-    const runs = await this._fetchJson('/backend/runs/metadatas');
-
-    this.runsById = {};
-    for (const run of runs) {
-      this.runsById[run.id] = {
-        id: run.id,
-        title: run.title,
-        datetime: new Date(run.datetime),
-        fs1: run.fs1,
-        fs2: run.fs2,
-        version: run.version,
-        comment: (run.comment === null || run.comment === undefined) ? '' : run.comment,
-        tags: Array.isArray(run.tags) ? run.tags : [],
-        bugs: Array.isArray(run.bugs) ? run.bugs : []
+    if (LOCAL_MODE) {
+      const make = (id, fs1, fs2, version) => {
+        this.runsById[id] = {
+          id: id,
+          datetime: new Date(),
+          fs1: fs1,
+          fs2: fs2,
+          version: version,
+          comment: "a comment",
+          tags: [],
+          bugs: ['XHwSwS4tX2U-fpF2paBIfw=='],
+        };
       };
-    }
+      make(0, "xfs", "btrfs", "0xbadcoffee");
+      make(1, "xfs", "btrfs", "0xbadcoffee");
+      make(2, "xfs", "btrfs", "0xbadcoffee");
+      make(3, "xfs", "btrfs", "0xbadcoffee");
+    } else {
+      const runs = await this._fetchJson("/backend/runs/metadatas");
 
+      for (const run of runs) {
+        const runbugs = await this._fetchJson(
+          `/backend/runs/details/${run.id}`,
+        );
+        console.log(runbugs);
+
+        this.runsById[run.id] = {
+          id: run.id,
+          title: run.title,
+          datetime: new Date(run.datetime),
+          fs1: run.fs1,
+          fs2: run.fs2,
+          version: run.version,
+          comment: (run.comment === null || run.comment === undefined)
+            ? ""
+            : run.comment,
+          tags: Array.isArray(run.tags) ? run.tags : [],
+          bugs: runbugs,
+        };
+      }
+    }
     return Object.values(this.runsById);
   }
 
@@ -51,7 +77,7 @@ class DiffuzzerStorage {
   //   key: string,             // хэш
   //   type: string,            // тип ошибки
   //   finCode: number,		// код возврата
-  //   fs1: string, 
+  //   fs1: string,
   //   fs2: string,
   //   comment: string,
   //   tags: string[]
@@ -60,7 +86,7 @@ class DiffuzzerStorage {
     if (this.bugsByKey[key]) {
       return this.bugsByKey[key];
     }
-			//TODO set endpoint
+    //TODO set endpoint
     const bug = await this._fetchJson(`/api/bugs/${encodeURIComponent(key)}`);
 
     const normalized = {
@@ -69,14 +95,16 @@ class DiffuzzerStorage {
       finCode: bug.finCode,
       fs1: bug.fs1,
       fs2: bug.fs2,
-      comment: (bug.comment === null || bug.comment === undefined) ? '' : bug.comment,
-      tags: Array.isArray(bug.tags) ? bug.tags : []
+      comment: (bug.comment === null || bug.comment === undefined)
+        ? ""
+        : bug.comment,
+      tags: Array.isArray(bug.tags) ? bug.tags : [],
     };
-    
+
     this.bugsByKey[key] = normalized;
     return normalized;
   }
-  
+
   /**
    * Загрузка zip-файла на бэкенд.
    * @param {File} file - объект File, например из <input type="file">
@@ -85,11 +113,11 @@ class DiffuzzerStorage {
   async upload_zip(file) {
     const formData = new FormData();
 
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const res = await fetch(this.baseUrl + '/backend/v1/runs', {
-      method: 'POST',
-      body: formData
+    const res = await fetch("/backend/v1/runs", {
+      method: "POST",
+      body: formData,
       // ВАЖНО: не ставить вручную headers['Content-Type'],
       // браузер сам проставит корректный multipart/form-data с boundary
     });
@@ -102,21 +130,9 @@ class DiffuzzerStorage {
 
     return {
       id: data.id,
-      status: data.status
+      status: data.status,
     };
   }
 }
 
 export const datalayer = new DiffuzzerStorage();
-
-//async function main() {
-//  try {
-//    const runs = await storage.get_runs();
-//    console.log('Испытания:', runs);
-//  } catch (err) {
-//    console.error('Ошибка при получении испытаний:', err);
-//  }
-//}
-//
-//main();
-//
