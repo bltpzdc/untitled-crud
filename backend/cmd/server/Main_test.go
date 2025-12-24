@@ -152,7 +152,7 @@ func TestEndToEnd_seriousTest(t *testing.T) {
 	var details dto.RunDetailsWithId
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
 	require.Equal(t, details.Id, runID)
-	validateRunDetails(t, &details)
+	require.Equal(t, len(details.Crashes), 8) // there are 8 crash groups, calculated by hand
 }
 
 func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {

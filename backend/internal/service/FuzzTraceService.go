@@ -140,40 +140,45 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	}
 	items, _ := os.ReadDir(tmpDir)
 	crashesGroupedByFailedOperations := make([]model.CrashesGroupedByFailedOperation, 0)
-	for _, f := range items {
-		if !f.IsDir() && f.Name() == "metadata.json" {
-			_, err2 := s.extractMetadata(f, tmpDir, metadata)
+	for _, topLevel := range items {
+		if !topLevel.IsDir() && topLevel.Name() == "metadata.json" {
+			_, err2 := s.extractMetadata(topLevel, tmpDir, metadata)
 			if err2 != nil {
 				return 0, err2
 			}
 		}
-		if f.IsDir() && strings.HasPrefix(f.Name(), "trace-") {
-			operationDirSplited := strings.Split(f.Name(), "-")
-			operation := operationDirSplited[1]
-			crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
-				ID:        0,
-				RunID:     0,  // yet unknown
-				Operation: operation,
-				TestCases: nil,
-			}
-
-			testCases := make([]model.TestCase, 0)
-
-			groups, _ := os.ReadDir(filepath.Join(tmpDir, f.Name()))
-			for _, group := range groups {
-				if group.IsDir() {
-					testArtifactsDir := filepath.Join(tmpDir, f.Name(), group.Name())
-
-					testCase, err := s.extractTestCase(testArtifactsDir)
-					if err != nil {
-						return 0, err
+		if topLevel.IsDir() && topLevel.Name() == "crashes" {
+			grouped, _ := os.ReadDir(filepath.Join(tmpDir, topLevel.Name()))
+			for _, f := range grouped {
+				if f.IsDir() && strings.HasPrefix(f.Name(), "trace-") {
+					operationDirSplited := strings.Split(f.Name(), "-")
+					operation := operationDirSplited[1]
+					crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
+						ID:        0,
+						RunID:     0, // yet unknown
+						Operation: operation,
+						TestCases: nil,
 					}
-					testCases = append(testCases, testCase)
+
+					testCases := make([]model.TestCase, 0)
+
+					groups, _ := os.ReadDir(filepath.Join(tmpDir, topLevel.Name(), f.Name()))
+					for _, group := range groups {
+						if group.IsDir() {
+							testArtifactsDir := filepath.Join(tmpDir, topLevel.Name(), f.Name(), group.Name())
+
+							testCase, err := s.extractTestCase(testArtifactsDir)
+							if err != nil {
+								return 0, err
+							}
+							testCases = append(testCases, testCase)
+						}
+					}
+
+					crashesGroupedBySpecificOperation.TestCases = testCases
+					crashesGroupedByFailedOperations = append(crashesGroupedByFailedOperations, crashesGroupedBySpecificOperation)
 				}
 			}
-			
-			crashesGroupedBySpecificOperation.TestCases = testCases
-			crashesGroupedByFailedOperations = append(crashesGroupedByFailedOperations, crashesGroupedBySpecificOperation)
 		}
 	}
 
