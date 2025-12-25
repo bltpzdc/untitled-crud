@@ -1,4 +1,4 @@
-const LOCAL_MODE = false;
+const LOCAL_MODE = true;
 
 class DiffuzzerStorage {
   constructor() {
@@ -26,19 +26,24 @@ class DiffuzzerStorage {
   //   comment: string,
   //   tags: string[]	//массив тегов
   //   bugs: string[]   // массив хэшей вида 'XHwSwS4tX2U-fpF2paBIfw=='
-  // }
+  //}
   async get_runs() {
     if (LOCAL_MODE) {
       const make = (id, fs1, fs2, version) => {
         this.runsById[id] = {
+          datatype: "run",
           id: id,
+          text: `Испытание ${id}`,
           datetime: new Date(),
+          run_time: new Date(),
+          fstype: [fs1, fs2],
+          analyzer: "Diffuzzer",
           fs1: fs1,
           fs2: fs2,
           version: version,
           comment: "a comment",
           tags: [],
-          bugs: ['XHwSwS4tX2U-fpF2paBIfw=='],
+          bugs: ["XHwSwS4tX2U-fpF2paBIfw=="],
         };
       };
       make(0, "xfs", "btrfs", "0xbadcoffee");
@@ -55,8 +60,9 @@ class DiffuzzerStorage {
         console.log(runbugs);
 
         this.runsById[run.id] = {
+          datatatype: "run",
           id: run.id,
-          title: run.title,
+          text: run.title,
           datetime: new Date(run.datetime),
           fs1: run.fs1,
           fs2: run.fs2,
@@ -83,26 +89,53 @@ class DiffuzzerStorage {
   //   tags: string[]
   // }
   async get_bug_by_key(key) {
-    if (this.bugsByKey[key]) {
-      return this.bugsByKey[key];
+    if (LOCAL_MODE) {
+      return {
+        key: "XHwSwS4tX2U-fpF2paBIfw==",
+        text: "XHwSwS4tX2U-fpF2paBIfw==",
+        optype: "Read",
+        reason: [
+          {
+            "Failure": {
+              "operation": "LSEEK",
+              "subcall": "lseek",
+              "return_code": -1,
+              "errno": 22,
+              "strerror": "Invalid argument",
+            },
+          },
+          {
+            "Success": {
+              "operation": "LSEEK",
+              "return_code": 1024,
+              "execution_time": 0,
+              "extra": { "hash": null, "timestamps": [] },
+            },
+          },
+        ],
+      };
+    } else {
+      if (this.bugsByKey[key]) {
+        return this.bugsByKey[key];
+      }
+      //TODO set endpoint
+      const bug = await this._fetchJson(`/api/bugs/${encodeURIComponent(key)}`);
+
+      const normalized = {
+        key: bug.key,
+        type: bug.type,
+        finCode: bug.finCode,
+        fs1: bug.fs1,
+        fs2: bug.fs2,
+        comment: (bug.comment === null || bug.comment === undefined)
+          ? ""
+          : bug.comment,
+        tags: Array.isArray(bug.tags) ? bug.tags : [],
+      };
+
+      this.bugsByKey[key] = normalized;
+      return normalized;
     }
-    //TODO set endpoint
-    const bug = await this._fetchJson(`/api/bugs/${encodeURIComponent(key)}`);
-
-    const normalized = {
-      key: bug.key,
-      type: bug.type,
-      finCode: bug.finCode,
-      fs1: bug.fs1,
-      fs2: bug.fs2,
-      comment: (bug.comment === null || bug.comment === undefined)
-        ? ""
-        : bug.comment,
-      tags: Array.isArray(bug.tags) ? bug.tags : [],
-    };
-
-    this.bugsByKey[key] = normalized;
-    return normalized;
   }
 
   /**

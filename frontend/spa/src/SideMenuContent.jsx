@@ -34,7 +34,7 @@ export default function SideMenuContent({ callback }) {
                     callback(item);
                   }}
                 >
-                  <ListItemText primary={item.id} />
+                  <ListItemText primary={item.text} />
                 </ListItemButton>
               </ListItem>
             ))}

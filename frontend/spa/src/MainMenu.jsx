@@ -1,10 +1,11 @@
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import CloseIcon from "@mui/icons-material/Close";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AppBar from "@mui/material/AppBar";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Box from "@mui/material/Box";
+import CloseIcon from "@mui/icons-material/Close";
+import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -22,7 +23,7 @@ import "react-diff-view/style/index.css";
 
 import SideMenu from "./SideMenu.jsx";
 
-import { storage_bugs } from "./Data.js";
+import { datalayer } from "./DataLayer.js";
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -91,11 +92,11 @@ function renderFile({ oldRevision, newRevision, type, hunks }) {
 
 export default function MainMenu() {
   const [value, setValue] = React.useState(0);
-  //const [tablist, setTablist] = React.useState([...storage, ...storage_bugs]);
   const [tablist, setTablist] = React.useState([]);
 
   const tablistAppend = (x) => {
     setTablist([...tablist, x]);
+    console.log(tablist);
   };
 
   const handleChange = (event, newValue) => {
@@ -136,29 +137,31 @@ export default function MainMenu() {
               label={
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <span>{item.text}</span>
-                  <IconButton
-                    aria-label="close tab"
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTablist((tabs) => {
-                        const newTabs = tabs.filter((_, i) => i !== idx);
-                        // Обновляем выбранный индекс, если нужно
-                        if (value === idx) {
-                          if (idx === 0) {
-                            setValue(0);
-                          } else {
-                            setValue(idx - 1);
+                  {
+                    <IconButton
+                      aria-label="close tab"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTablist((tabs) => {
+                          const newTabs = tabs.filter((_, i) => i !== idx);
+                          // Обновляем выбранный индекс, если нужно
+                          if (value === idx) {
+                            if (idx === 0) {
+                              setValue(0);
+                            } else {
+                              setValue(idx - 1);
+                            }
+                          } else if (value > idx) {
+                            setValue(value - 1);
                           }
-                        } else if (value > idx) {
-                          setValue(value - 1);
-                        }
-                        return newTabs;
-                      });
-                    }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
+                          return newTabs;
+                        });
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  }
                 </div>
               }
             />
@@ -191,6 +194,8 @@ export default function MainMenu() {
             {(item.datatype == "run")
               ? (
                 <>
+                  {console.log("Rendering a run")}
+                  {console.log(item)}
                   <Box sx={{ mt: 4, mb: 3, px: 6, width: "100%" }}>
                     <Box sx={{ display: "flex", mb: 2 }}>
                       {/* Левая колонка: дата/ФС/анализатор */}
@@ -205,7 +210,7 @@ export default function MainMenu() {
                             Дата и время:
                           </Typography>
                           <Typography variant="body1">
-                            {item.run_time.toLocaleString("ru-RU", {
+                            {item.datetime.toLocaleString("ru-RU", {
                               year: "numeric",
                               month: "2-digit",
                               day: "2-digit",
@@ -303,11 +308,12 @@ export default function MainMenu() {
                       >
                         <List>
                           {console.log("Building bugs list"),
-                            storage_bugs.filter((x) =>
-                              item.bugs.includes(x.key)
-                            ).map((inner_item, idx) => {
-                              console.log(item),
-                                console.log(inner_item),
+                            console.log(item),
+                            item.bugs
+                            .map(x => datalayer.get_bug_by_key(x))
+                            .map((inner_item, idx) => {
+                              console.log(item);
+                                console.log(inner_item);
                                 console.log(inner_item.key);
                               return (
                                 <ListItem>
@@ -332,6 +338,18 @@ export default function MainMenu() {
               )
               : (
                 <>
+                  <Grid size={6}>
+                    <Button
+                      variant="text"
+                      onClick={() => {
+                        setTablist(tablist.filter((x) => x.text != item.text));
+                      }}
+                    >
+                      Закрыть баг
+                    </Button>
+                  </Grid>
+
+                  {parseDiff(diff).map(renderFile)}
                 </>
               )}
           </TabPanel>
