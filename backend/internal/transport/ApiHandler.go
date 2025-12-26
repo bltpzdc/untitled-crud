@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -28,6 +29,7 @@ func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
 	}
 	runId, err := h.service.StoreFuzzerRun(c.Request.Context(), filePath)
 	if err != nil {
+		slog.Error("Failed to store fuzzer rn", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 	}
 
@@ -47,6 +49,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		slog.Error("Failed to get metadata", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -62,6 +65,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	runs, err := h.service.GetRuns(c.Request.Context())
 	if err != nil {
+		slog.Error("Failed to get metadatas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
