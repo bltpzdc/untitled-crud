@@ -1,25 +1,29 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
 
-import CssBaseline from '@mui/material/CssBaseline';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import Tabs from '@mui/material/Tabs';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
+import CssBaseline from "@mui/material/CssBaseline";
+import Box from "@mui/material/Box";
+import { ThemeProvider } from "@mui/material/styles";
 
-import MainMenu from './MainMenu.jsx'
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";    //regular
+import "@fontsource/roboto/500.css";    //meduim
+import "@fontsource/roboto/600.css";    //semibold
+import "@fontsource/roboto/700.css";
 
-createRoot(document.getElementById('root')).render(
-  <Box sx={{ display: 'flex' }}>
-    <CssBaseline/>
+import MainMenu from "./MainMenu.jsx";
+import { theme } from "./Theme.js";
+
+createRoot(document.getElementById("root")).render(
+  <ThemeProvider theme={theme}>
+    <CssBaseline />
     <StrictMode>
-      {/* NOTE(savikin): put sidemenu inside MainMenu
-       while working around layout bugs */}
-      <MainMenu/>
+      <Box sx={{ display: "flex" }}>
+        {/* NOTE(savikin): put sidemenu inside MainMenu
+         while working around layout bugs */}
+        <MainMenu />
+      </Box>
     </StrictMode>
-  </Box>
-)
+  </ThemeProvider>
+);

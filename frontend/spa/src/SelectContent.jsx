@@ -66,6 +66,7 @@ export default function SelectContent({ callback }) {
           sx={{
             flexGrow: 1,
             flexShrink: 1,
+            marginTop: '-9px',
           }}
         />
         <Tab

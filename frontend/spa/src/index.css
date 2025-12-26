@@ -118,9 +118,14 @@ button:focus-visible {
   --accent-primary-default: #206CC9;
 
   --border-neutral-primary: #EEEFF5;
+  --border-neutral-secondary: #E5E5E5;
+
+  --border-accent-default: #206CC9;
 
   --text-neutral-primary: #262626;
   --text-neutral-secondary: #757575;
+
+  --chip-info-default: #C6D9F1;
 }
 
 .MuiAppBar-root {

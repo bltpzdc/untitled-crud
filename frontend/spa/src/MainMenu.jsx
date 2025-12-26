@@ -1,8 +1,9 @@
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
+import Chip from "@mui/material/Chip";
 import AppBar from "@mui/material/AppBar";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Box from "@mui/material/Box";
 import CloseIcon from "@mui/icons-material/Close";
 import Grid from "@mui/material/Grid";
@@ -179,7 +180,7 @@ export default function MainMenu() {
           display: "flex",
           flexDirection: "column",
           overflow: "auto",
-          p: 3,
+          p: 0,
         }}
       >
         {
@@ -196,20 +197,19 @@ export default function MainMenu() {
                 <>
                   {console.log("Rendering a run")}
                   {console.log(item)}
-                  <Box sx={{ mt: 4, mb: 3, px: 6, width: "100%" }}>
+                  <Box sx={{ mt: 0, mb: 3, px: 0, width: "100%" }}>
                     <Box sx={{ display: "flex", mb: 2 }}>
                       {/* Левая колонка: дата/ФС/анализатор */}
-                      <Box sx={{ flex: 1, mr: 6 }}>
+                      <Box sx={{ flex: 1.1, mr: 6 }}>
                         {/* Дата и время */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Дата и время:
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="fieldValue">
                             {item.datetime.toLocaleString("ru-RU", {
                               year: "numeric",
                               month: "2-digit",
@@ -223,13 +223,12 @@ export default function MainMenu() {
                         {/* Файловые системы */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Файловые системы:
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="fieldValue">ss
                             {item.fstype.join(", ")}
                           </Typography>
                         </Box>
@@ -237,13 +236,12 @@ export default function MainMenu() {
                         {/* Анализатор */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Анализатор:
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="fieldValue">
                             {item.analyzer}
                           </Typography>
                         </Box>
@@ -254,9 +252,8 @@ export default function MainMenu() {
                         {/* Комментарий */}
                         <Box sx={{ display: "flex", mb: 2 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 110, lineHeight: "40px" }}
+                            variant="fieldHeader"
+                            sx={{ width: 110, lineHeight: "40px", mr: 2 }}
                           >
                             Комментарий
                           </Typography>
@@ -271,8 +268,7 @@ export default function MainMenu() {
                         {/* Теги */}
                         <Box sx={{ display: "flex" }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
+                            variant="fieldHeader"
                             sx={{ width: 110, lineHeight: "32px" }}
                           >
                             Теги:
@@ -290,13 +286,43 @@ export default function MainMenu() {
                       </Box>
                     </Box>
                   </Box>
-                  <Accordion>
+                  <Accordion
+                    elevation={0}
+                    square
+                    sx={{
+                      borderTop: "none",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderBottom: "1px solid rgba(0,0,0,0.12)",
+                      "&:before": { display: "none" },
+                    }}
+                  >
                     <AccordionSummary
-                      expandIcon={<ArrowDownwardIcon />}
+                      expandIcon={
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Chip
+                            label={(item.bugs?.length ?? 0).toString()}
+                            color="var(--chip-info-default)"
+                            size="small"
+                            sx={{ borderRadius: 999, mr: 2.5 }}
+                          />
+                          <ExpandMoreIcon className="MuiAccordionSummary-expandIcon" />
+                        </Box>
+                      }
                       aria-controls="panel1-content"
                       id="panel1-header"
+                      sx={{
+                        minHeight: 48,
+                        paddingLeft: 0, 
+                        "& .MuiAccordionSummary-content": {
+                          margin: 0,
+                        },
+                        "& .MuiAccordionSummary-expandIconWrapper": {
+                          transform: "none !important",
+                        },
+                      }}
                     >
-                      Read
+                      <Typography variant="fieldHeader">Read</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                       <Stack
