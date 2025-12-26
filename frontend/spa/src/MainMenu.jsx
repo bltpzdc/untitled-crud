@@ -1,9 +1,12 @@
+import * as React from "react";
+
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Chip from "@mui/material/Chip";
 import AppBar from "@mui/material/AppBar";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Box from "@mui/material/Box";
 import CloseIcon from "@mui/icons-material/Close";
 import Grid from "@mui/material/Grid";
@@ -11,6 +14,7 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
+import Button from "@mui/material/Button";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
@@ -18,8 +22,8 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import * as React from "react";
-import { Diff, Hunk } from "react-diff-view";
+import { createPatch, diffChars } from "diff";
+import { Diff, Hunk, parseDiff } from "react-diff-view";
 import "react-diff-view/style/index.css";
 
 import SideMenu from "./SideMenu.jsx";
@@ -50,6 +54,13 @@ function a11yProps(index) {
     id: `mainmenu-fullwidth-tab-${index}`,
     "aria-controls": `mainmenu-fullwidth-tabpanel-${index}`,
   };
+}
+function formpatch(v1, v2) {
+  let x = createPatch("test", v1, v2);
+  x = x.split("\n");
+  x.splice(0, 1);
+  x.splice(0, 1);
+  return x.join("\n");
 }
 
 // TODO(savikin): it's repeated in SideMenu, merge
@@ -197,19 +208,20 @@ export default function MainMenu() {
                 <>
                   {console.log("Rendering a run")}
                   {console.log(item)}
-                  <Box sx={{ mt: 0, mb: 3, px: 0, width: "100%" }}>
+                  <Box sx={{ mt: 4, mb: 3, px: 6, width: "100%" }}>
                     <Box sx={{ display: "flex", mb: 2 }}>
                       {/* Левая колонка: дата/ФС/анализатор */}
                       <Box sx={{ flex: 1.1, mr: 6 }}>
                         {/* Дата и время */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="fieldHeader"
-                            sx={{ width: 220 }}
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
                           >
                             Дата и время:
                           </Typography>
-                          <Typography variant="fieldValue">
+                          <Typography variant="body1">
                             {item.datetime.toLocaleString("ru-RU", {
                               year: "numeric",
                               month: "2-digit",
@@ -223,12 +235,13 @@ export default function MainMenu() {
                         {/* Файловые системы */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="fieldHeader"
-                            sx={{ width: 220 }}
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
                           >
                             Файловые системы:
                           </Typography>
-                          <Typography variant="fieldValue">ss
+                          <Typography variant="fieldValue">
                             {item.fstype.join(", ")}
                           </Typography>
                         </Box>
@@ -236,12 +249,13 @@ export default function MainMenu() {
                         {/* Анализатор */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="fieldHeader"
-                            sx={{ width: 220 }}
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
                           >
                             Анализатор:
                           </Typography>
-                          <Typography variant="fieldValue">
+                          <Typography variant="body1">
                             {item.analyzer}
                           </Typography>
                         </Box>
@@ -252,8 +266,9 @@ export default function MainMenu() {
                         {/* Комментарий */}
                         <Box sx={{ display: "flex", mb: 2 }}>
                           <Typography
-                            variant="fieldHeader"
-                            sx={{ width: 110, lineHeight: "40px", mr: 2 }}
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 110, lineHeight: "40px" }}
                           >
                             Комментарий
                           </Typography>
@@ -268,7 +283,8 @@ export default function MainMenu() {
                         {/* Теги */}
                         <Box sx={{ display: "flex" }}>
                           <Typography
-                            variant="fieldHeader"
+                            variant="body2"
+                            color="text.secondary"
                             sx={{ width: 110, lineHeight: "32px" }}
                           >
                             Теги:
@@ -298,6 +314,7 @@ export default function MainMenu() {
                     }}
                   >
                     <AccordionSummary
+                      expandIcon={<ArrowDownwardIcon />}
                       expandIcon={
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                           <Chip
@@ -313,7 +330,7 @@ export default function MainMenu() {
                       id="panel1-header"
                       sx={{
                         minHeight: 48,
-                        paddingLeft: 0, 
+                        paddingLeft: 0,
                         "& .MuiAccordionSummary-content": {
                           margin: 0,
                         },
@@ -322,7 +339,7 @@ export default function MainMenu() {
                         },
                       }}
                     >
-                      <Typography variant="fieldHeader">Read</Typography>
+                      <Typography variant="fieldHeader">Баги</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                       <Stack
@@ -336,26 +353,25 @@ export default function MainMenu() {
                           {console.log("Building bugs list"),
                             console.log(item),
                             item.bugs
-                            .map(x => datalayer.get_bug_by_key(x))
-                            .map((inner_item, idx) => {
-                              console.log(item);
+                              .map((inner_item, idx) => {
+                                console.log(item);
                                 console.log(inner_item);
-                                console.log(inner_item.key);
-                              return (
-                                <ListItem>
-                                  <ListItemButton
-                                    onClick={() => {
-                                      setTablist([...tablist, inner_item]);
-                                    }}
-                                  >
-                                    <ListItemText
-                                      key={inner_item.key}
-                                      primary={inner_item.key}
-                                    />
-                                  </ListItemButton>
-                                </ListItem>
-                              );
-                            })}
+                                console.log(inner_item.ID);
+                                return (
+                                  <ListItem>
+                                    <ListItemButton
+                                      onClick={() => {
+                                        setTablist([...tablist, inner_item]);
+                                      }}
+                                    >
+                                      <ListItemText
+                                        key={inner_item.ID}
+                                        primary={`Баг: ${inner_item.ID}`}
+                                      />
+                                    </ListItemButton>
+                                  </ListItem>
+                                );
+                              })}
                         </List>
                       </Stack>
                     </AccordionDetails>
@@ -364,18 +380,11 @@ export default function MainMenu() {
               )
               : (
                 <>
-                  <Grid size={6}>
-                    <Button
-                      variant="text"
-                      onClick={() => {
-                        setTablist(tablist.filter((x) => x.text != item.text));
-                      }}
-                    >
-                      Закрыть баг
-                    </Button>
-                  </Grid>
-
-                  {parseDiff(diff).map(renderFile)}
+                  {console.log("Rendering a bug")}
+                  {console.log(item)}
+                  {parseDiff(
+                    formpatch(item.TestCases[0].Test, item.TestCases[1].Test),
+                  ).map(renderFile)}
                 </>
               )}
           </TabPanel>
