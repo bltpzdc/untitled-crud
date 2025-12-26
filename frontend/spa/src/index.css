@@ -1,7 +1,11 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
   text-align: left;
 }
 
@@ -39,22 +43,6 @@
 
 .read-the-docs {
   color: #888;
-}
-
-
-:root {
-  font-family: 'Roboto';
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -111,3 +99,65 @@ button:focus-visible {
   }
 }
 
+:root {
+  font-family: 'Roboto';
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --surface-neutral-primary: #FFFFFF;
+
+  --accent-primary-default: #206CC9;
+
+  --border-neutral-primary: #EEEFF5;
+  --border-neutral-secondary: #E5E5E5;
+
+  --border-accent-default: #206CC9;
+
+  --text-neutral-primary: #262626;
+  --text-neutral-secondary: #757575;
+
+  --chip-info-default: #C6D9F1;
+}
+
+.MuiAppBar-root {
+  box-shadow: none !important;
+}
+.MuiTabs-root {
+  background-color: var(--surface-neutral-primary);
+  color: var(--text-neutral-secondary);
+  border-bottom: 1px solid var(--border-neutral-primary);
+  
+  height: 40px !important;
+  padding-top: 16px;
+  padding-bottom: 0;     
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.MuiTab-root {
+  font-size: 16px !important;
+  text-transform: none !important;
+  transform: translateY(-5px);
+}
+.MuiTab-root.Mui-selected {
+  height: 40px;
+  color: var(--text-neutral-primary) !important;
+  font-weight: 500;
+}
+.MuiTabs-scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.MuiTabs-indicator {
+  height: 2px;
+  background-color: var(--accent-primary-default);
+  box-shadow: none;
+}

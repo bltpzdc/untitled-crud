@@ -1,46 +1,41 @@
-import * as React from 'react';
-import { styled } from '@mui/material/styles';
-import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import SelectContent from './SelectContent';
-import OptionsMenu from './OptionsMenu';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Container from '@mui/material/Container';
-import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import * as React from "react";
 
-import {parseDiff, Diff, Hunk} from 'react-diff-view';
-import 'react-diff-view/style/index.css';
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Chip from "@mui/material/Chip";
+import AppBar from "@mui/material/AppBar";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import Box from "@mui/material/Box";
+import CloseIcon from "@mui/icons-material/Close";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import Button from "@mui/material/Button";
+import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import { createPatch, diffChars } from "diff";
+import { Diff, Hunk, parseDiff } from "react-diff-view";
+import "react-diff-view/style/index.css";
 
+import SideMenu from "./SideMenu.jsx";
 
-import SideMenu from './SideMenu.jsx'
-
-import { storage, storage_bugs, setStorage } from './Data.js';
+import { datalayer } from "./DataLayer.js";
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
   return (
     <div
-      role='tabpanel'
+      role="tabpanel"
       hidden={value !== index}
       id={`mainmenu-fullwidth-tabpanel-${index}`}
       aria-labelledby={`mainmenu-fullwidth-tab-${index}`}
@@ -57,10 +52,16 @@ function TabPanel(props) {
 function a11yProps(index) {
   return {
     id: `mainmenu-fullwidth-tab-${index}`,
-    'aria-controls': `mainmenu-fullwidth-tabpanel-${index}`,
+    "aria-controls": `mainmenu-fullwidth-tabpanel-${index}`,
   };
 }
-
+function formpatch(v1, v2) {
+  let x = createPatch("test", v1, v2);
+  x = x.split("\n");
+  x.splice(0, 1);
+  x.splice(0, 1);
+  return x.join("\n");
+}
 
 // TODO(savikin): it's repeated in SideMenu, merge
 const drawerWidth = 480;
@@ -88,21 +89,26 @@ index 5006ce3..d2248fb 100644
    }
 `;
 
-function renderFile({oldRevision, newRevision, type, hunks}) {
-    return (
-        <Diff key={oldRevision + '-' + newRevision} viewType='split' diffType={type} hunks={hunks}>
-            {hunks => hunks.map(hunk => <Hunk key={hunk.content} hunk={hunk} />)}
-        </Diff>
-    );
+function renderFile({ oldRevision, newRevision, type, hunks }) {
+  return (
+    <Diff
+      key={oldRevision + "-" + newRevision}
+      viewType="split"
+      diffType={type}
+      hunks={hunks}
+    >
+      {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
+    </Diff>
+  );
 }
 
 export default function MainMenu() {
   const [value, setValue] = React.useState(0);
-  //const [tablist, setTablist] = React.useState([...storage, ...storage_bugs]);
   const [tablist, setTablist] = React.useState([]);
 
   const tablistAppend = (x) => {
-    setTablist([...tablist, x])
+    setTablist([...tablist, x]);
+    console.log(tablist);
   };
 
   const handleChange = (event, newValue) => {
@@ -111,8 +117,8 @@ export default function MainMenu() {
 
   return (
     <>
-      <AppBar 
-        position='fixed'
+      <AppBar
+        position="fixed"
         sx={{
           width: `calc(100% - ${drawerWidth}px)`,
           ml: `${drawerWidth}px`,
@@ -121,110 +127,266 @@ export default function MainMenu() {
         <Tabs
           value={value}
           onChange={handleChange}
-          textColor='inherit'
-          variant='fullWidth'
+          textColor="inherit"
+          variant="scrollable"
+          scrollButtons={false}
         >
-        {
-          tablist.map((item, idx) => (
-            <Tab label={item.text} key={idx} {...a11yProps(idx)} />
-          ))
-        }
+          {tablist.map((item, idx) => (
+            <Tab
+              key={idx}
+              {...a11yProps(idx)}
+              sx={{
+                textTransform: "none",
+                fontWeight: 400,
+                minHeight: 40,
+                height: 40,
+                paddingTop: 0,
+                paddingBottom: 0,
+                alignItems: "flex-start",
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+              label={
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span>{item.text}</span>
+                  {
+                    <IconButton
+                      aria-label="close tab"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTablist((tabs) => {
+                          const newTabs = tabs.filter((_, i) => i !== idx);
+                          // Обновляем выбранный индекс, если нужно
+                          if (value === idx) {
+                            if (idx === 0) {
+                              setValue(0);
+                            } else {
+                              setValue(idx - 1);
+                            }
+                          } else if (value > idx) {
+                            setValue(value - 1);
+                          }
+                          return newTabs;
+                        });
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  }
+                </div>
+              }
+            />
+          ))}
         </Tabs>
       </AppBar>
 
       <SideMenu callback={tablistAppend} />
 
       <Box
-        component='main'
+        component="main"
         sx={{
           flexGrow: 1,
-          minHeight: '100vh',
-          minWidth: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'auto',
-          p: 3,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "auto",
+          p: 0,
         }}
       >
-        {/* Toolbar is here to fix some collision issues,
+        {
+          /* Toolbar is here to fix some collision issues,
          in accordance to something i have seen once somewhere in the docs
-         hence: might be neither needed nor harmless*/}
-        <Toolbar/>
+         hence: might be neither needed nor harmless*/
+        }
+        <Toolbar />
 
         {tablist.map((item, index) => (
-          <TabPanel component={'span'} value={value} index={index} key={index}>
-            {
-              (item.datatype == 'run') ?
-              <>
-              <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-                <Grid size={6}>
-                  Дата и время: {item.run_time.toString()}
-                </Grid>
-                <Grid size={6}>
-                  Комментарий: <TextField id='standard-basic' label='Standard' variant='standard' />
-                </Grid>
-                <Grid size={6}>
-                  Файловые системы: {item.fstype.join(', ')}
-                </Grid>
-                <Grid size={6}>
-                  Теги:
-                </Grid>
-                <Grid size={6}>
-                  Анализатор: {item.analyzer}
-                </Grid>
-                <Grid size={6}>
-                  <Button 
-                    variant='text'
-                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
-                  >Закрыть испытание</Button>
-                </Grid>
-              </Grid>
-              <Accordion>
-                <AccordionSummary
-                  expandIcon={<ArrowDownwardIcon />}
-                  aria-controls='panel1-content'
-                  id='panel1-header'
-                >
-                Read
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Stack
-                    sx={{
-                      flexGrow: 1,
-                      alignItems: 'stretch',
-                      justifyContent: 'space-between' }}>
-                    <List>
-                    {
-                      console.log('Building bugs list'), storage_bugs.filter(x => item.bugs.includes(x.key)).map((inner_item, idx) => {
-                        console.log(item), console.log(inner_item), console.log(inner_item.key);
-                        return (
-                          <ListItem>
-                            <ListItemButton
-                              onClick={()=>{setTablist([...tablist, inner_item])}}
-                            >
-                              <ListItemText key={inner_item.key} primary={inner_item.key} />
-                            </ListItemButton>
-                          </ListItem>
-                        );
-                      })
-                    }
-                    </List>
-                  </Stack>
-                </AccordionDetails>
-              </Accordion>
-              </>
-              : 
-              <>
-                <Grid size={6}>
-                  <Button 
-                    variant='text'
-                    onClick={ ()=>{setTablist(tablist.filter(x=> x.text != item.text));} }
-                  >Закрыть баг</Button>
-                </Grid>
+          <TabPanel component={"span"} value={value} index={index} key={index}>
+            {(item.datatype == "run")
+              ? (
+                <>
+                  {console.log("Rendering a run")}
+                  {console.log(item)}
+                  <Box sx={{ mt: 4, mb: 3, px: 6, width: "100%" }}>
+                    <Box sx={{ display: "flex", mb: 2 }}>
+                      {/* Левая колонка: дата/ФС/анализатор */}
+                      <Box sx={{ flex: 1.1, mr: 6 }}>
+                        {/* Дата и время */}
+                        <Box sx={{ display: "flex", mb: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
+                          >
+                            Дата и время:
+                          </Typography>
+                          <Typography variant="body1">
+                            {item.datetime.toLocaleString("ru-RU", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Typography>
+                        </Box>
 
-                {parseDiff(diff).map(renderFile)}
-              </>
-            }
+                        {/* Файловые системы */}
+                        <Box sx={{ display: "flex", mb: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
+                          >
+                            Файловые системы:
+                          </Typography>
+                          <Typography variant="fieldValue">
+                            {item.fstype.join(", ")}
+                          </Typography>
+                        </Box>
+
+                        {/* Анализатор */}
+                        <Box sx={{ display: "flex", mb: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 140 }}
+                          >
+                            Анализатор:
+                          </Typography>
+                          <Typography variant="body1">
+                            {item.analyzer}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Правая колонка: комментарий + теги */}
+                      <Box sx={{ flex: 1 }}>
+                        {/* Комментарий */}
+                        <Box sx={{ display: "flex", mb: 2 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 110, lineHeight: "40px" }}
+                          >
+                            Комментарий
+                          </Typography>
+                          <TextField
+                            size="small"
+                            variant="outlined"
+                            fullWidth
+                            placeholder="Комментарий"
+                          />
+                        </Box>
+
+                        {/* Теги */}
+                        <Box sx={{ display: "flex" }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: 110, lineHeight: "32px" }}
+                          >
+                            Теги:
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            {/* сюда потом добавишь Chip'ы и кнопку + */}
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <Accordion
+                    elevation={0}
+                    square
+                    sx={{
+                      borderTop: "none",
+                      borderLeft: "none",
+                      borderRight: "none",
+                      borderBottom: "1px solid rgba(0,0,0,0.12)",
+                      "&:before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ArrowDownwardIcon />}
+                      expandIcon={
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Chip
+                            label={(item.bugs?.length ?? 0).toString()}
+                            color="var(--chip-info-default)"
+                            size="small"
+                            sx={{ borderRadius: 999, mr: 2.5 }}
+                          />
+                          <ExpandMoreIcon className="MuiAccordionSummary-expandIcon" />
+                        </Box>
+                      }
+                      aria-controls="panel1-content"
+                      id="panel1-header"
+                      sx={{
+                        minHeight: 48,
+                        paddingLeft: 0,
+                        "& .MuiAccordionSummary-content": {
+                          margin: 0,
+                        },
+                        "& .MuiAccordionSummary-expandIconWrapper": {
+                          transform: "none !important",
+                        },
+                      }}
+                    >
+                      <Typography variant="fieldHeader">Баги</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Stack
+                        sx={{
+                          flexGrow: 1,
+                          alignItems: "stretch",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <List>
+                          {console.log("Building bugs list"),
+                            console.log(item),
+                            item.bugs
+                              .map((inner_item, idx) => {
+                                console.log(item);
+                                console.log(inner_item);
+                                console.log(inner_item.ID);
+                                return (
+                                  <ListItem>
+                                    <ListItemButton
+                                      onClick={() => {
+                                        setTablist([...tablist, inner_item]);
+                                      }}
+                                    >
+                                      <ListItemText
+                                        key={inner_item.ID}
+                                        primary={`Баг: ${inner_item.ID}`}
+                                      />
+                                    </ListItemButton>
+                                  </ListItem>
+                                );
+                              })}
+                        </List>
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                </>
+              )
+              : (
+                <>
+                  {console.log("Rendering a bug")}
+                  {console.log(item)}
+                  {parseDiff(
+                    formpatch(item.TestCases[0].Test, item.TestCases[1].Test),
+                  ).map(renderFile)}
+                </>
+              )}
           </TabPanel>
         ))}
       </Box>
