@@ -16,6 +16,8 @@ type FsOperation struct {
 	Params map[string]any
 }
 
+
+// DB related models
 type FuzzerRun struct {
 	ID                              int                               `db:"id"`
 	Timestamp                       string                            `db:"timestamp"`
@@ -41,7 +43,6 @@ type TestCase struct {
 	CrashID         int             `db:"crash_id"`
 	TotalOperations int             `db:"total_operations"`
 	Test            pgtype.Text     `db:"test"`
-	Diff            pgtype.Text     `db:"diff"`
 	FSSummaries     []FsTestSummary `db:"-"`
 }
 

@@ -1,0 +1,52 @@
+name: backend-tests.yml
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  DB_NAME: diffuzzer_db
+  DB_USER: diffuzzer_user
+  DB_PASSWORD: diffuzzer_password
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    services:
+      db:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ${{ env.DB_USER }}
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD}}
+          POSTGRES_DB: ${{ env.DB_NAME }}
+        ports:
+          - 5432:5432
+        options: >- # hopefully so that database is initialized before we fill it with content
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          path: ${{ github.sha }}  # workaround for some weirdness with checkout, where it failed to delete a folder from previous run
+      - name: Initialize database
+        env:
+          PGPASSWORD: ${{ env.DB_PASSWORD}}
+        run: |
+          psql -h 0.0.0.0 -U ${{ env.DB_USER }} -d ${{ env.DB_NAME }} -f ${{ github.sha }}/backend/internal/db/init.sql
+      - name: Go environment
+        uses: actions/setup-go@v6
+        with:
+          go-version: '>=1.25.3'
+      - name: Run tests
+        working-directory: ${{ github.sha }}/backend
+        env:
+          DB_USER: ${{ env.DB_USER }}
+          DB_PASSWORD: ${{ env.DB_PASSWORD }}
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: ${{ env.DB_NAME }}
+        run: go test -v ./...
+
+
