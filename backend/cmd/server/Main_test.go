@@ -153,6 +153,11 @@ func TestEndToEnd_seriousTest(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&details))
 	require.Equal(t, details.Id, runID)
 	require.Equal(t, len(details.Crashes), 8) // there are 8 crash groups, calculated by hand
+	for _, groupedCrashes := range details.Crashes {
+		for _, test := range groupedCrashes.TestCases {
+			require.NotEqual(t, test.Hash, "") // hashes are folder names, they cannot be empty
+		}
+	}
 }
 
 func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {

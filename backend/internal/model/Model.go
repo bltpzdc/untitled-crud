@@ -16,7 +16,6 @@ type FsOperation struct {
 	Params map[string]any
 }
 
-
 // DB related models
 type FuzzerRun struct {
 	ID                              int                               `db:"id"`
@@ -41,6 +40,7 @@ type CrashesGroupedByFailedOperation struct {
 type TestCase struct {
 	ID              int             `db:"id"`
 	CrashID         int             `db:"crash_id"`
+	Hash            string          `db:"hash"`
 	TotalOperations int             `db:"total_operations"`
 	Test            pgtype.Text     `db:"test"`
 	FSSummaries     []FsTestSummary `db:"-"`

@@ -69,6 +69,7 @@ type CrashesGroupedByFailedOperation struct {
 type TestCase struct {
 	ID              int
 	CrashID         int
+	Hash            string
 	TotalOperations int
 	Test            pgtype.Text
 	FSSummaries     []FsTestSummary

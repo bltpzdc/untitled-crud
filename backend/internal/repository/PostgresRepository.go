@@ -165,9 +165,9 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 			testJSON, _ := json.Marshal(testCase.Test)
 
 			err := r.db.QueryRow(ctx,
-				`INSERT INTO test_cases (crash_id, total_operations, test) 
-                 VALUES ($1, $2, $3) RETURNING id`,
-				testCase.CrashID, testCase.TotalOperations, testJSON,
+				`INSERT INTO test_cases (crash_id, hash, total_operations, test) 
+                 VALUES ($1, $2, $3, $4) RETURNING id`,
+				testCase.CrashID, testCase.Hash, testCase.TotalOperations, testJSON,
 			).Scan(&testCase.ID)
 			if err != nil {
 				return err
@@ -224,7 +224,7 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
 
 func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]model.TestCase, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, total_operations, test FROM test_cases WHERE crash_id = $1",
+		"SELECT id, hash, total_operations, test FROM test_cases WHERE crash_id = $1",
 		crashID,
 	)
 	if err != nil {
@@ -237,7 +237,7 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
 		var testCase model.TestCase
 		var testJSON []byte
 
-		if err := rows.Scan(&testCase.ID, &testCase.TotalOperations, &testJSON); err != nil {
+		if err := rows.Scan(&testCase.ID, &testCase.Hash, &testCase.TotalOperations, &testJSON); err != nil {
 			return nil, err
 		}
 

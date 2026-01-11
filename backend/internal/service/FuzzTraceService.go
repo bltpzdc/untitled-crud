@@ -167,7 +167,7 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 						if group.IsDir() {
 							testArtifactsDir := filepath.Join(tmpDir, topLevel.Name(), f.Name(), group.Name())
 
-							testCase, err := s.extractTestCase(testArtifactsDir)
+							testCase, err := s.extractTestCase(testArtifactsDir, group.Name())
 							if err != nil {
 								return 0, err
 							}
@@ -201,10 +201,11 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	return id, nil
 }
 
-func (s *FuzzTraceService) extractTestCase(testDir string) (model.TestCase, error) {
+func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.TestCase, error) {
 	testCase := model.TestCase{
 		ID:              0,
 		CrashID:         0,
+		Hash:            hash,
 		TotalOperations: 0,
 		Test:            pgtype.Text{},
 		FSSummaries:     nil,

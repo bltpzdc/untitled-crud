@@ -30,7 +30,7 @@ func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
 	}
 	runId, err := h.service.StoreFuzzerRun(c.Request.Context(), filePath)
 	if err != nil {
-		slog.Error("Failed to store fuzzer rn", "error", err)
+		slog.Error("Failed to store fuzzer run", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 	}
 
