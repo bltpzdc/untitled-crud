@@ -1,0 +1,20 @@
+services:
+
+  # assumed env for tests: DB_USER=diffuzzer_user;DB_PASSWORD=diffuzzer_password;DB_NAME=diffuzzer_db;DB_PORT=1200;DB_HOST=localhost
+  db:
+    image: postgres:15
+    restart: always
+    shm_size: 128mb
+    volumes:
+      - "untitled-crud-test:/var/lib/postgresql/data"
+      - ./internal/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 1200:5432
+    environment:
+      POSTGRES_USER: diffuzzer_user
+      POSTGRES_DB: diffuzzer_db
+      POSTGRES_PASSWORD: diffuzzer_password
+
+volumes:
+  untitled-crud-test:
+    driver: local

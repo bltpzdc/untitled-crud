@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS op_crashes (
 CREATE TABLE IF NOT EXISTS test_cases (
     id SERIAL PRIMARY KEY,
     crash_id INTEGER NOT NULL REFERENCES op_crashes(id) ON DELETE CASCADE,
+    hash VARCHAR(40) NOT NULL,
     total_operations INTEGER NOT NULL DEFAULT 0,
-    test JSONB,
-    diff JSONB
+    test JSONB
 );
 
 CREATE TABLE IF NOT EXISTS fs_test_summaries (
