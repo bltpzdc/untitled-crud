@@ -84,3 +84,8 @@ type FsTestSummary struct {
 	FsExecutionTime pgtype.Interval
 	FsTrace         pgtype.Text
 }
+
+type ExecutionSearchQuery struct {
+	BeginDate string
+	EndDate   string
+}

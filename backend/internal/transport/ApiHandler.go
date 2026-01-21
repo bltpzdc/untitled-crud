@@ -5,9 +5,11 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
+	"github.com/metametamoon/untitled-crud/backend/internal/model"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 )
@@ -106,6 +108,48 @@ func (h *FuzzTraceHandler) GetFuzzerRunDetails(c *gin.Context) {
 	copier.Copy(&details.Crashes, &run.CrashesGroupedByFailedOperation)
 
 	c.JSON(http.StatusOK, details)
+}
+
+// why must this be a separate function?...
+func parseOptionalDate(val string) (*time.Time, error) {
+	if val == "-" || val == "" {
+		return nil, nil
+	}
+	t, err := time.Parse("2006-01-02", val)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
+	fromDate, err := parseOptionalDate(c.Query("fromdate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fromdate"})
+	}
+	toDate, err := parseOptionalDate(c.Query("todate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid todate"})
+	}
+
+	runs, err := h.service.GetRunsBySearchPattern(c.Request.Context(), model.RunSearchPattern{
+		FromDate: fromDate,
+		ToDate:   toDate,
+	})
+
+	result := make([]dto.MetadataWithId, 0)
+	for id, run := range runs {
+		result = append(result, dto.MetadataWithId{
+			Id: id,
+			Metadata: dto.Metadata{
+				Timestamp:    run.Timestamp,
+				FailureCount: run.FailureCount,
+				Tags:         run.Tags,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {

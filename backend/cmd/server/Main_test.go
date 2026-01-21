@@ -158,6 +158,29 @@ func TestEndToEnd_seriousTest(t *testing.T) {
 			require.NotEqual(t, test.Hash, "") // hashes are folder names, they cannot be empty
 		}
 	}
+
+	// check filtering, the element exists
+	// the date in archive is 2025-09-01T13:00:00Z
+	searchMatchURL := fmt.Sprintf("%s/v1/runs/search?fromdate=2025-08-01&todate=2025-10-01", ts.URL)
+	resp, err = http.Get(searchMatchURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var searchResultsMatch []dto.MetadataWithId
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&searchResultsMatch))
+	require.LessOrEqual(t, 1, len(searchResultsMatch), "Should find the run uploaded just now")
+
+	// check filtering, the element does not exist
+	searchMissURL := fmt.Sprintf("%s/v1/runs/search?fromdate=2024-01-01&todate=2024-12-31", ts.URL)
+	resp, err = http.Get(searchMissURL)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var searchResultsMiss []dto.MetadataWithId
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&searchResultsMiss))
+	require.Equal(t, 0, len(searchResultsMiss), "Should find zero runs for the year 2024")
 }
 
 func verifyReturnedZipContent(t *testing.T, zr *zip.Reader) bool {

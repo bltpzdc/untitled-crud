@@ -38,6 +38,7 @@ func main() {
 	router.GET("/runs/metadata/:id", fuzzTraceHandler.GetFuzzerRunMetadata)
 	router.GET("/runs/archive/:id", fuzzTraceHandler.DownloadArchive)
 	router.GET("/runs/details/:id", fuzzTraceHandler.GetFuzzerRunDetails)
+	router.GET("/runs/search", fuzzTraceHandler.GetFuzzerRunsBySearchPattern)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := router.Run(":8080"); err != nil {

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
@@ -289,7 +290,7 @@ func (s *FuzzTraceService) GetRuns(ctx context.Context) (map[int]model.Metadata,
 			Tags:         run.Tags,
 		}
 	}
-	log.Printf("Successfully got fuzzer runs in the amout of %d", len(runs))
+	log.Printf("Successfully got fuzzer runs in the amount of %d", len(runs))
 	return result, nil
 }
 
@@ -300,6 +301,25 @@ func (s *FuzzTraceService) GetRun(ctx context.Context, runID int) (*model.Fuzzer
 	}
 	log.Printf("Successfully got fuzzer run with id %d", runID)
 	return run, nil
+}
+
+func (s *FuzzTraceService) GetRunsBySearchPattern(ctx context.Context, pattern model.RunSearchPattern) ([]model.FuzzerRun, error) {
+	runs, err := s.fuzzTraceRepo.GetRuns(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]model.FuzzerRun, 0)
+	for _, run := range runs {
+		t, err := time.Parse(time.RFC3339, run.Timestamp)
+		if err == nil {
+			if (pattern.ToDate == nil || t.Before(*pattern.ToDate)) &&
+				(pattern.FromDate == nil || t.After(*pattern.FromDate)) {
+				result = append(result, run)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (s *FuzzTraceService) GetRunArchive(id int) (string, error) {

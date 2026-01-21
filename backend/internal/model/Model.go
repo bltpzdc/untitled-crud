@@ -2,6 +2,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -54,4 +56,9 @@ type FsTestSummary struct {
 	FsFailureCount  int             `db:"fs_failure_count"`
 	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
 	FsTrace         pgtype.Text     `db:"fs_trace"`
+}
+
+type RunSearchPattern struct {
+	FromDate *time.Time
+	ToDate   *time.Time
 }
