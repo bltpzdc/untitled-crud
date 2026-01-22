@@ -23,10 +23,13 @@ func NewFuzzTraceHandler(service *service.FuzzTraceService) *FuzzTraceHandler {
 }
 
 func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
-	file, _ := c.FormFile("file")
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+	}
 	randNumber := rand.Int()
 	filePath := "./tmp/" + strconv.Itoa(randNumber) + ".zip"
-	err := c.SaveUploadedFile(file, filePath)
+	err = c.SaveUploadedFile(file, filePath)
 	if err != nil {
 		return
 	}
