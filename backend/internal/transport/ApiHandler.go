@@ -1,11 +1,15 @@
 package transport
 
 import (
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
+	"github.com/metametamoon/untitled-crud/backend/internal/model"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
 )
@@ -19,15 +23,19 @@ func NewFuzzTraceHandler(service *service.FuzzTraceService) *FuzzTraceHandler {
 }
 
 func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
-	file, _ := c.FormFile("file")
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+	}
 	randNumber := rand.Int()
 	filePath := "./tmp/" + strconv.Itoa(randNumber) + ".zip"
-	err := c.SaveUploadedFile(file, filePath)
+	err = c.SaveUploadedFile(file, filePath)
 	if err != nil {
 		return
 	}
 	runId, err := h.service.StoreFuzzerRun(c.Request.Context(), filePath)
 	if err != nil {
+		slog.Error("Failed to store fuzzer run", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 	}
 
@@ -47,6 +55,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		slog.Error("Failed to get metadata", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -62,9 +71,75 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	runs, err := h.service.GetRuns(c.Request.Context())
 	if err != nil {
+		slog.Error("Failed to get metadatas", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	result := make([]dto.MetadataWithId, 0)
+	for id, run := range runs {
+		result = append(result, dto.MetadataWithId{
+			Id: id,
+			Metadata: dto.Metadata{
+				Timestamp:    run.Timestamp,
+				FailureCount: run.FailureCount,
+				Tags:         run.Tags,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *FuzzTraceHandler) GetFuzzerRunDetails(c *gin.Context) {
+	runID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	run, err := h.service.GetRun(c.Request.Context(), runID)
+	if run == nil && err == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Run not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var details dto.RunDetailsWithId
+	details.Id = runID
+	copier.Copy(&details.Crashes, &run.CrashesGroupedByFailedOperation)
+
+	c.JSON(http.StatusOK, details)
+}
+
+// why must this be a separate function?...
+func parseOptionalDate(val string) (*time.Time, error) {
+	if val == "-" || val == "" {
+		return nil, nil
+	}
+	t, err := time.Parse("2006-01-02", val)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
+	fromDate, err := parseOptionalDate(c.Query("fromdate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fromdate"})
+	}
+	toDate, err := parseOptionalDate(c.Query("todate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid todate"})
+	}
+
+	runs, err := h.service.GetRunsBySearchPattern(c.Request.Context(), model.RunSearchPattern{
+		FromDate: fromDate,
+		ToDate:   toDate,
+	})
+
 	result := make([]dto.MetadataWithId, 0)
 	for id, run := range runs {
 		result = append(result, dto.MetadataWithId{

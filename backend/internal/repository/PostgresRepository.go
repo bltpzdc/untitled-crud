@@ -163,12 +163,11 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 			testCase.CrashID = opCrash.ID
 
 			testJSON, _ := json.Marshal(testCase.Test)
-			diffJSON, _ := json.Marshal(testCase.Diff)
 
 			err := r.db.QueryRow(ctx,
-				`INSERT INTO test_cases (crash_id, total_operations, test_seq, diff) 
+				`INSERT INTO test_cases (crash_id, hash, total_operations, test) 
                  VALUES ($1, $2, $3, $4) RETURNING id`,
-				testCase.CrashID, testCase.TotalOperations, testJSON, diffJSON,
+				testCase.CrashID, testCase.Hash, testCase.TotalOperations, testJSON,
 			).Scan(&testCase.ID)
 			if err != nil {
 				return err
@@ -225,7 +224,7 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
 
 func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]model.TestCase, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, total_operations, test_seq, diff FROM test_cases WHERE crash_id = $1",
+		"SELECT id, hash, total_operations, test FROM test_cases WHERE crash_id = $1",
 		crashID,
 	)
 	if err != nil {
@@ -236,14 +235,13 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
 	var testCases []model.TestCase
 	for rows.Next() {
 		var testCase model.TestCase
-		var testJSON, diffJSON []byte
+		var testJSON []byte
 
-		if err := rows.Scan(&testCase.ID, &testCase.TotalOperations, &testJSON, &diffJSON); err != nil {
+		if err := rows.Scan(&testCase.ID, &testCase.Hash, &testCase.TotalOperations, &testJSON); err != nil {
 			return nil, err
 		}
 
 		json.Unmarshal(testJSON, &testCase.Test)
-		json.Unmarshal(diffJSON, &testCase.Diff)
 
 		fsSummaries, err := r.getTestCaseFsSummaries(ctx, testCase.ID)
 		if err != nil {
