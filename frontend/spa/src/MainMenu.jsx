@@ -6,7 +6,6 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Chip from "@mui/material/Chip";
 import AppBar from "@mui/material/AppBar";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Box from "@mui/material/Box";
 import CloseIcon from "@mui/icons-material/Close";
 import Grid from "@mui/material/Grid";
@@ -25,6 +24,7 @@ import Typography from "@mui/material/Typography";
 import { createPatch, diffChars } from "diff";
 import { Diff, Hunk, parseDiff } from "react-diff-view";
 import "react-diff-view/style/index.css";
+import "./DiffTheme.css"
 
 import SideMenu from "./SideMenu.jsx";
 
@@ -42,7 +42,7 @@ function TabPanel(props) {
       {...other}
     >
       {value === index && (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, backgroundColor: "#ffffff" }}>
           {children}
         </Box>
       )}
@@ -96,6 +96,7 @@ function renderFile({ oldRevision, newRevision, type, hunks }) {
       viewType="split"
       diffType={type}
       hunks={hunks}
+      className="my-diff"
     >
       {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
     </Diff>
@@ -208,20 +209,19 @@ export default function MainMenu() {
                 <>
                   {console.log("Rendering a run")}
                   {console.log(item)}
-                  <Box sx={{ mt: 4, mb: 3, px: 6, width: "100%" }}>
+                  <Box sx={{ mt: 0, mb: 3, px: 0, width: "100%" }}>
                     <Box sx={{ display: "flex", mb: 2 }}>
                       {/* Левая колонка: дата/ФС/анализатор */}
                       <Box sx={{ flex: 1.1, mr: 6 }}>
                         {/* Дата и время */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Дата и время:
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="fieldValue">
                             {item.datetime.toLocaleString("ru-RU", {
                               year: "numeric",
                               month: "2-digit",
@@ -235,9 +235,8 @@ export default function MainMenu() {
                         {/* Файловые системы */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Файловые системы:
                           </Typography>
@@ -249,13 +248,12 @@ export default function MainMenu() {
                         {/* Анализатор */}
                         <Box sx={{ display: "flex", mb: 1 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 140 }}
+                            variant="fieldHeader"
+                            sx={{ width: 220 }}
                           >
                             Анализатор:
                           </Typography>
-                          <Typography variant="body1">
+                          <Typography variant="fieldValue">
                             {item.analyzer}
                           </Typography>
                         </Box>
@@ -266,9 +264,8 @@ export default function MainMenu() {
                         {/* Комментарий */}
                         <Box sx={{ display: "flex", mb: 2 }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ width: 110, lineHeight: "40px" }}
+                            variant="fieldHeader"
+                            sx={{ width: 110, lineHeight: "40px", mr: 2 }}
                           >
                             Комментарий
                           </Typography>
@@ -283,8 +280,7 @@ export default function MainMenu() {
                         {/* Теги */}
                         <Box sx={{ display: "flex" }}>
                           <Typography
-                            variant="body2"
-                            color="text.secondary"
+                            variant="fieldHeader"
                             sx={{ width: 110, lineHeight: "32px" }}
                           >
                             Теги:
@@ -314,7 +310,6 @@ export default function MainMenu() {
                     }}
                   >
                     <AccordionSummary
-                      expandIcon={<ArrowDownwardIcon />}
                       expandIcon={
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                           <Chip

@@ -1,0 +1,7 @@
+.my-diff {
+  --diff-background-color: #ffffff;
+  --diff-text-color: #262626;
+
+  --diff-code-insert-background-color: #e6ffed;
+  --diff-code-delete-background-color: #ffeef0;
+}
