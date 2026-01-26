@@ -14,6 +14,7 @@ type Metadata struct {
 	Timestamp    string   `json:"timestamp"`
 	FailureCount int      `json:"failureCount"`
 	Tags         []string `json:"tags"`
+	Comment      *string  `json:"comment,omitempty"`
 }
 
 type RunDetailsWithId struct {

@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS fuzzer_runs (
     id SERIAL PRIMARY KEY,
     timestamp VARCHAR(30),
-    failure_count INTEGER NOT NULL DEFAULT 0
+    failure_count INTEGER NOT NULL DEFAULT 0,
+    comment TEXT
 );
 
 CREATE TABLE IF NOT EXISTS tags (

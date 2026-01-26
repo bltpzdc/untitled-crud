@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +64,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 		Timestamp:    run.Timestamp,
 		FailureCount: run.FailureCount,
 		Tags:         run.Tags,
+		Comment:      run.Comment,
 	}
 
 	c.JSON(http.StatusOK, metadata)
@@ -83,6 +85,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 				Timestamp:    run.Timestamp,
 				FailureCount: run.FailureCount,
 				Tags:         run.Tags,
+				Comment:      run.Comment,
 			},
 		})
 	}
@@ -118,7 +121,7 @@ func parseOptionalDate(val string) (*time.Time, error) {
 	if val == "-" || val == "" {
 		return nil, nil
 	}
-	t, err := time.Parse("2006-01-02", val)
+	t, err := time.ParseInLocation("2006-01-02", val, time.UTC)
 	if err != nil {
 		return nil, err
 	}
@@ -129,10 +132,12 @@ func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
 	fromDate, err := parseOptionalDate(c.Query("fromdate"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fromdate"})
+		return
 	}
 	toDate, err := parseOptionalDate(c.Query("todate"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid todate"})
+		return
 	}
 
 	runs, err := h.service.GetRunsBySearchPattern(c.Request.Context(), model.RunSearchPattern{
@@ -148,6 +153,7 @@ func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
 				Timestamp:    run.Timestamp,
 				FailureCount: run.FailureCount,
 				Tags:         run.Tags,
+				Comment:      run.Comment,
 			},
 		})
 	}
@@ -166,4 +172,128 @@ func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 	}
 	c.Header("Content-Type", "application/zip")
 	c.File(file)
+}
+
+func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
+	tags, err := h.service.GetAllTags(c.Request.Context())
+	if err != nil {
+		slog.Error("Failed to get tags", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	result := make([]dto.Tag, 0)
+	for _, tag := range tags {
+		result = append(result, dto.Tag{
+			ID:   tag.ID,
+			Name: tag.Name,
+		})
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *FuzzTraceHandler) UpdateRunTags(c *gin.Context) {
+	runID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	var request struct {
+		Tags []string `json:"tags"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err = h.service.UpdateRunTags(c.Request.Context(), runID, request.Tags)
+	if err != nil {
+		slog.Error("Failed to update run tags", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *FuzzTraceHandler) UpdateRunComment(c *gin.Context) {
+	runID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	var request struct {
+		Comment *string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err = h.service.UpdateRunComment(c.Request.Context(), runID, request.Comment)
+	if err != nil {
+		slog.Error("Failed to update run comment", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *FuzzTraceHandler) DeleteRun(c *gin.Context) {
+	runID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid run ID"})
+		return
+	}
+
+	err = h.service.DeleteRun(c.Request.Context(), runID)
+	if err != nil {
+		slog.Error("Failed to delete run", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPatternWithTags(c *gin.Context) {
+	fromDate, err := parseOptionalDate(c.Query("fromdate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fromdate"})
+		return
+	}
+	toDate, err := parseOptionalDate(c.Query("todate"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid todate"})
+		return
+	}
+
+	var tags []string
+	if tagsParam := c.Query("tags"); tagsParam != "" {
+		tags = strings.Split(tagsParam, ",")
+		for i := range tags {
+			tags[i] = strings.TrimSpace(tags[i])
+		}
+	}
+
+	runs, err := h.service.GetRunsBySearchPatternWithTags(c.Request.Context(), model.RunSearchPattern{
+		FromDate: fromDate,
+		ToDate:   toDate,
+	}, tags)
+
+	result := make([]dto.MetadataWithId, 0)
+	for _, run := range runs {
+		result = append(result, dto.MetadataWithId{
+			Id: run.ID,
+			Metadata: dto.Metadata{
+				Timestamp:    run.Timestamp,
+				FailureCount: run.FailureCount,
+				Tags:         run.Tags,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
 )
@@ -62,10 +63,16 @@ func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun
 func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
 	var run model.FuzzerRun
 
+	var comment pgtype.Text
 	err := r.db.QueryRow(ctx, `
-        SELECT id, timestamp, failure_count
+        SELECT id, timestamp, failure_count, comment
         FROM fuzzer_runs WHERE id = $1
-    `, id).Scan(&run.ID, &run.Timestamp, &run.FailureCount)
+    `, id).Scan(&run.ID, &run.Timestamp, &run.FailureCount, &comment)
+	
+	if err == nil && comment.Valid {
+		commentStr := comment.String
+		run.Comment = &commentStr
+	}
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -91,7 +98,7 @@ func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.Fuzzer
 
 func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, timestamp, failure_count FROM fuzzer_runs ORDER BY timestamp DESC",
+		"SELECT id, timestamp, failure_count, comment FROM fuzzer_runs ORDER BY timestamp DESC",
 	)
 	if err != nil {
 		return nil, err
@@ -102,9 +109,14 @@ func (r *FuzzTraceRepository) GetRuns(ctx context.Context) ([]model.FuzzerRun, e
 
 	for rows.Next() {
 		var run model.FuzzerRun
-		err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount)
+		var comment pgtype.Text
+		err := rows.Scan(&run.ID, &run.Timestamp, &run.FailureCount, &comment)
 		if err != nil {
 			return nil, err
+		}
+		if comment.Valid {
+			commentStr := comment.String
+			run.Comment = &commentStr
 		}
 
 		tags, err := r.getRunTags(ctx, run.ID)
@@ -349,4 +361,24 @@ func (r *FuzzTraceRepository) addRunTags(ctx context.Context, runID int, tagName
 		}
 	}
 	return nil
+}
+
+func (r *FuzzTraceRepository) UpdateRunTags(ctx context.Context, runID int, tagNames []string) error {
+	return r.addRunTags(ctx, runID, tagNames)
+}
+
+func (r *FuzzTraceRepository) UpdateRunComment(ctx context.Context, runID int, comment *string) error {
+	_, err := r.db.Exec(ctx,
+		"UPDATE fuzzer_runs SET comment = $1 WHERE id = $2",
+		comment, runID,
+	)
+	return err
+}
+
+func (r *FuzzTraceRepository) DeleteRun(ctx context.Context, runID int) error {
+	_, err := r.db.Exec(ctx,
+		"DELETE FROM fuzzer_runs WHERE id = $1",
+		runID,
+	)
+	return err
 }
