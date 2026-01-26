@@ -19,10 +19,12 @@ export default function SideMenuContent({ callback }) {
   const [fromDate, setFromDate] = React.useState("");
   const [toDate, setToDate] = React.useState("");
   const [selectedTags, setSelectedTags] = React.useState([]);
+  const [selectedOperations, setSelectedOperations] = React.useState([]);
   const [availableTags, setAvailableTags] = React.useState([]);
+  const [availableOperations, setAvailableOperations] = React.useState([]);
   const [isFiltered, setIsFiltered] = React.useState(false);
 
-  const filterRuns = React.useCallback((runs, from, to, tags) => {
+  const filterRuns = React.useCallback((runs, from, to, tags, operations) => {
     let filtered = [...runs];
 
     if (from || to) {
@@ -61,6 +63,18 @@ export default function SideMenuContent({ callback }) {
       });
     }
 
+    if (operations && operations.length > 0) {
+      const operationSet = new Set(operations.map(op => String(op).toLowerCase().trim()));
+      filtered = filtered.filter(run => {
+        if (!run.bugs || !Array.isArray(run.bugs)) return false;
+        // Проверяем, есть ли хотя бы один баг с выбранной операцией
+        return run.bugs.some(bug => {
+          const bugOperation = (bug.Operation || bug.operation || "").toLowerCase().trim();
+          return bugOperation && operationSet.has(bugOperation);
+        });
+      });
+    }
+
     return filtered;
   }, []);
 
@@ -69,6 +83,21 @@ export default function SideMenuContent({ callback }) {
       const data = await datalayer.get_runs();
       setAllRuns(data);
       setFilteredRuns(data);
+      
+      // Собираем все уникальные операции из багов
+      const operationsSet = new Set();
+      data.forEach(run => {
+        if (run.bugs && Array.isArray(run.bugs)) {
+          run.bugs.forEach(bug => {
+            const operation = bug.Operation || bug.operation;
+            if (operation && String(operation).trim()) {
+              operationsSet.add(String(operation).trim());
+            }
+          });
+        }
+      });
+      const operationsList = Array.from(operationsSet).sort();
+      setAvailableOperations(operationsList);
     }
     
     async function get_tags() {
@@ -100,12 +129,79 @@ export default function SideMenuContent({ callback }) {
       console.log("SideMenuContent: Run deleted event received, reloading runs.");
       const data = await datalayer.get_runs();
       setAllRuns(data);
-      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags);
+      
+      const operationsSet = new Set();
+      data.forEach(run => {
+        if (run.bugs && Array.isArray(run.bugs)) {
+          run.bugs.forEach(bug => {
+            const operation = bug.Operation || bug.operation;
+            if (operation && String(operation).trim()) {
+              operationsSet.add(String(operation).trim());
+            }
+          });
+        }
+      });
+      const operationsList = Array.from(operationsSet).sort();
+      setAvailableOperations(operationsList);
+      
+      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
+      setFilteredRuns(filtered);
+    };
+    
+    const handleRunUpdated = async (event) => {
+      const { runId, tags, comment } = event.detail || {};
+      if (!runId) return;
+      
+      console.log("SideMenuContent: Run updated event received, updating run", runId);
+      
+      const data = await datalayer.get_runs();
+      setAllRuns(data);
+      
+      const operationsSet = new Set();
+      data.forEach(run => {
+        if (run.bugs && Array.isArray(run.bugs)) {
+          run.bugs.forEach(bug => {
+            const operation = bug.Operation || bug.operation;
+            if (operation && String(operation).trim()) {
+              operationsSet.add(String(operation).trim());
+            }
+          });
+        }
+      });
+      const operationsList = Array.from(operationsSet).sort();
+      setAvailableOperations(operationsList);
+      
+      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
+      setFilteredRuns(filtered);
+    };
+    
+    const handleRunsReload = async () => {
+      console.log("SideMenuContent: Runs reload event received, reloading runs.");
+      const data = await datalayer.get_runs();
+      setAllRuns(data);
+      
+      const operationsSet = new Set();
+      data.forEach(run => {
+        if (run.bugs && Array.isArray(run.bugs)) {
+          run.bugs.forEach(bug => {
+            const operation = bug.Operation || bug.operation;
+            if (operation && String(operation).trim()) {
+              operationsSet.add(String(operation).trim());
+            }
+          });
+        }
+      });
+      const operationsList = Array.from(operationsSet).sort();
+      setAvailableOperations(operationsList);
+      
+      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
       setFilteredRuns(filtered);
     };
     
     window.addEventListener('tagsUpdated', handleTagsUpdate);
     window.addEventListener('runDeleted', handleRunDeleted);
+    window.addEventListener('runUpdated', handleRunUpdated);
+    window.addEventListener('runsReload', handleRunsReload);
     
     get_runs();
     get_tags();
@@ -113,150 +209,83 @@ export default function SideMenuContent({ callback }) {
     return () => {
       window.removeEventListener('tagsUpdated', handleTagsUpdate);
       window.removeEventListener('runDeleted', handleRunDeleted);
+      window.removeEventListener('runUpdated', handleRunUpdated);
+      window.removeEventListener('runsReload', handleRunsReload);
     };
   }, []);
 
   React.useEffect(() => {
+    const handleApplyFilter = (event) => {
+      const { fromDate: fd, toDate: td, selectedTags: st, selectedOperations: so } = event.detail || {};
+      setFromDate(fd || "");
+      setToDate(td || "");
+      setSelectedTags(st || []);
+      setSelectedOperations(so || []);
+      setIsFiltered(true);
+    };
+    
+    const handleClearFilter = () => {
+      setIsFiltered(false);
+      setFromDate("");
+      setToDate("");
+      setSelectedTags([]);
+      setSelectedOperations([]);
+    };
+    
+    window.addEventListener('applyFilter', handleApplyFilter);
+    window.addEventListener('clearFilter', handleClearFilter);
+    
+    return () => {
+      window.removeEventListener('applyFilter', handleApplyFilter);
+      window.removeEventListener('clearFilter', handleClearFilter);
+    };
+  }, []);
+  
+  React.useEffect(() => {
     if (isFiltered) {
-      const filtered = filterRuns(allRuns, fromDate || null, toDate || null, selectedTags);
+      const filtered = filterRuns(allRuns, fromDate || null, toDate || null, selectedTags, selectedOperations);
       setFilteredRuns(filtered);
     } else {
       setFilteredRuns(allRuns);
     }
-  }, [allRuns, fromDate, toDate, selectedTags, isFiltered, filterRuns]);
-
-  const handleApplyFilter = () => {
-    setIsFiltered(true);
-  };
-
-  const handleClearFilter = () => {
-    setIsFiltered(false);
-    setFromDate("");
-    setToDate("");
-    setSelectedTags([]);
-  };
+  }, [allRuns, fromDate, toDate, selectedTags, selectedOperations, isFiltered, filterRuns]);
 
   return (
-    <Stack
-      sx={{
-        flexGrow: 1,
-        alignItems: "stretch",
-        justifyContent: "space-between",
-      }}
-    >
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-        <Typography variant="subtitle2" sx={{ mb: 2 }}>
-          Фильтр
-        </Typography>
-        <Stack spacing={2}>
-          <TextField
-            label="От"
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            size="small"
-            fullWidth
-          />
-          <TextField
-            label="До"
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            size="small"
-            fullWidth
-          />
-          <Autocomplete
-            multiple
-            options={Array.isArray(availableTags) ? availableTags : []}
-            value={Array.isArray(selectedTags) ? selectedTags.map(tag => String(tag || '')) : []}
-            onChange={(event, newValue) => {
-              const stringTags = (newValue || [])
-                .filter(tag => tag != null)
-                .map(tag => String(tag).trim())
-                .filter(tag => tag.length > 0);
-              setSelectedTags(stringTags);
-            }}
-            isOptionEqualToValue={(option, value) => {
-              return String(option || '') === String(value || '');
-            }}
-            getOptionLabel={(option) => {
-              return String(option || '');
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Теги"
-                size="small"
-                placeholder="Выберите теги"
-              />
-            )}
-            renderTags={(value, getTagProps) => {
-              if (!Array.isArray(value)) {
-                return null;
-              }
-              return value
-                .filter(tag => tag != null && tag !== '')
-                .map((option, index) => {
-                  const label = String(option).trim();
-                  
-                  if (!label) {
-                    return null;
-                  }
-                  
-                  return (
-                    <Chip
-                      key={`filter-tag-${index}-${label}`}
-                      label={label}
-                      size="small"
-                      {...getTagProps({ index })}
-                    />
-                  );
-                })
-                .filter(Boolean);
-            }}
-          />
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="contained"
-              onClick={handleApplyFilter}
-              size="small"
-              fullWidth
-            >
-              Применить
-            </Button>
-            {isFiltered && (
-              <Button
-                variant="outlined"
-                onClick={handleClearFilter}
-                size="small"
-                fullWidth
-              >
-                Сбросить
-              </Button>
-            )}
-          </Stack>
-        </Stack>
-      </Box>
-      <List sx={{ flexGrow: 1, overflow: "auto" }}>
-        {filteredRuns
-          .map((item, index) => (
-            <ListItem key={index}>
+    <List sx={{ flexGrow: 1, overflow: "auto", padding: 0, height: "100%" }}>
+        {filteredRuns.length === 0 ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'var(--text-neutral-secondary)' }}>
+              Нет испытаний
+            </Typography>
+          </Box>
+        ) : (
+          filteredRuns.map((item, index) => (
+            <ListItem key={index} sx={{ padding: 0 }}>
               <ListItemButton
                 onClick={() => {
                   callback(item);
                 }}
+                sx={{
+                  padding: '12px 16px',
+                  '&:hover': {
+                    backgroundColor: 'var(--surface-neutral-secondary)',
+                  },
+                }}
               >
-                <ListItemText primary={item.text} />
+                <ListItemText 
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    sx: {
+                      color: 'var(--text-neutral-primary)',
+                      fontSize: '14px',
+                      fontWeight: 400,
+                    },
+                  }}
+                />
               </ListItemButton>
             </ListItem>
-          ))}
-      </List>
-    </Stack>
+          ))
+        )}
+    </List>
   );
 }

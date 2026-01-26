@@ -27,35 +27,38 @@ export default function SideMenu({callback}) {
           height: '100vh',
           display: 'flex',
           flexDirection: 'column',
+          backgroundColor: 'var(--surface-neutral-primary)',
+          borderRight: '1px solid var(--border-neutral-primary)',
         },
       }}
       variant='permanent'
       anchor='left'
     >
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         <SelectContent callback={callback} />
       </Box>
         <Stack
           direction='row'
           sx={{
             p: 2,
-            gap: 1,
+            gap: 1.5,
             alignItems: 'center',
             borderTop: '1px solid',
-            borderColor: 'divider',
+            borderColor: 'var(--border-neutral-primary)',
+            backgroundColor: 'var(--surface-neutral-primary)',
           }}
         >
         <Avatar
           sizes='small'
           alt='User'
           src='/static/images/avatar/7.jpg'
-          sx={{ width: 36, height: 36 }}
+          sx={{ width: 40, height: 40 }}
         />
-        <Box sx={{ mr: 'auto' }}>
-          <Typography variant='body2' sx={{ fontWeight: 500, lineHeight: '16px' }}>
+        <Box sx={{ mr: 'auto', flex: 1, minWidth: 0 }}>
+          <Typography variant='body2' sx={{ fontWeight: 500, lineHeight: '20px', color: 'var(--text-neutral-primary)' }}>
             User
           </Typography>
-          <Typography variant='caption' sx={{ color: 'text.secondary' }}>
+          <Typography variant='caption' sx={{ color: 'var(--text-neutral-secondary)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             user@example.com
           </Typography>
         </Box>

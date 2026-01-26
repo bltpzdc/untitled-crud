@@ -175,6 +175,7 @@ export default function MainMenu() {
       });
       
       window.dispatchEvent(new CustomEvent('tagsUpdated', { detail: tagsArray }));
+      window.dispatchEvent(new CustomEvent('runUpdated', { detail: { runId, tags: tagsArray } }));
     } catch (error) {
       console.error("Failed to update tags:", error);
       console.error("Error details:", error.message);
@@ -206,6 +207,8 @@ export default function MainMenu() {
         console.log("Updated tablist:", updated);
         return updated;
       });
+      
+      window.dispatchEvent(new CustomEvent('runUpdated', { detail: { runId, comment: commentValue } }));
     } catch (error) {
       console.error("Failed to update comment:", error);
       console.error("Error details:", error.message);
@@ -261,6 +264,9 @@ export default function MainMenu() {
         sx={{
           width: `calc(100% - ${drawerWidth}px)`,
           ml: `${drawerWidth}px`,
+          backgroundColor: 'var(--surface-neutral-primary)',
+          borderBottom: '1px solid var(--border-neutral-primary)',
+          boxShadow: 'none',
         }}
       >
         <Tabs
@@ -330,6 +336,7 @@ export default function MainMenu() {
           flexDirection: "column",
           overflow: "auto",
           p: 0,
+          backgroundColor: 'var(--surface-neutral-secondary)',
         }}
       >
         {
@@ -346,15 +353,23 @@ export default function MainMenu() {
                 <>
                   {console.log("Rendering a run")}
                   {console.log(item)}
-                  <Box sx={{ mt: 0, mb: 3, px: 0, width: "100%" }}>
+                  <Box sx={{ mt: 0, mb: 3, px: 3, width: "100%", backgroundColor: 'var(--surface-neutral-primary)' }}>
                     {/* Кнопка удаления испытания */}
-                    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3, pt: 2 }}>
                       <Button
                         variant="outlined"
                         color="error"
                         startIcon={<DeleteIcon />}
                         onClick={() => handleDeleteRun(item.id)}
                         size="small"
+                        sx={{
+                          borderColor: 'var(--border-neutral-secondary)',
+                          color: '#D32F2F',
+                          '&:hover': {
+                            borderColor: '#D32F2F',
+                            backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                          },
+                        }}
                       >
                         Удалить испытание
                       </Button>
@@ -605,79 +620,109 @@ export default function MainMenu() {
                       </Box>
                     </Box>
                   </Box>
-                  <Accordion
-                    elevation={0}
-                    square
-                    sx={{
-                      borderTop: "none",
-                      borderLeft: "none",
-                      borderRight: "none",
-                      borderBottom: "1px solid rgba(0,0,0,0.12)",
-                      "&:before": { display: "none" },
-                    }}
-                  >
-                    <AccordionSummary
-                      expandIcon={
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Chip
-                            label={(item.bugs?.length ?? 0).toString()}
-                            color="var(--chip-info-default)"
-                            size="small"
-                            sx={{ borderRadius: 999, mr: 2.5 }}
-                          />
-                          <ExpandMoreIcon className="MuiAccordionSummary-expandIcon" />
-                        </Box>
+                  
+                  {/* Заголовок "Баги" */}
+                  <Box sx={{ mt: 3, mb: 2 }}>
+                    <Typography variant="fieldHeader" sx={{ fontSize: "1.1rem", fontWeight: 500 }}>
+                      Баги
+                    </Typography>
+                  </Box>
+
+                  {/* Группировка багов по операциям */}
+                  {(() => {
+                    // Группируем баги по операциям
+                    const bugsByOperation = {};
+                    (item.bugs || []).forEach((bug) => {
+                      const operation = bug.Operation || bug.operation || "Без операции";
+                      if (!bugsByOperation[operation]) {
+                        bugsByOperation[operation] = [];
                       }
-                      aria-controls="panel1-content"
-                      id="panel1-header"
-                      sx={{
-                        minHeight: 48,
-                        paddingLeft: 0,
-                        "& .MuiAccordionSummary-content": {
-                          margin: 0,
-                        },
-                        "& .MuiAccordionSummary-expandIconWrapper": {
-                          transform: "none !important",
-                        },
-                      }}
-                    >
-                      <Typography variant="fieldHeader">Баги</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Stack
-                        sx={{
-                          flexGrow: 1,
-                          alignItems: "stretch",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <List>
-                          {console.log("Building bugs list"),
-                            console.log(item),
-                            item.bugs
-                              .map((inner_item, idx) => {
-                                console.log(item);
-                                console.log(inner_item);
-                                console.log(inner_item.ID);
-                                return (
-                                  <ListItem>
-                                    <ListItemButton
-                                      onClick={() => {
-                                        setTablist([...tablist, inner_item]);
-                                      }}
-                                    >
-                                      <ListItemText
-                                        key={inner_item.ID}
-                                        primary={`Баг: ${inner_item.ID}`}
-                                      />
-                                    </ListItemButton>
-                                  </ListItem>
-                                );
-                              })}
-                        </List>
-                      </Stack>
-                    </AccordionDetails>
-                  </Accordion>
+                      bugsByOperation[operation].push(bug);
+                    });
+
+                    // Сортируем операции по алфавиту
+                    const sortedOperations = Object.keys(bugsByOperation).sort();
+
+                    return sortedOperations.map((operation, opIdx) => {
+                      const bugsForOperation = bugsByOperation[operation];
+                      return (
+                        <Accordion
+                          key={`operation-${operation}-${opIdx}`}
+                          elevation={0}
+                          square
+                          sx={{
+                            borderTop: "none",
+                            borderLeft: "none",
+                            borderRight: "none",
+                            borderBottom: "1px solid var(--border-neutral-primary)",
+                            "&:before": { display: "none" },
+                            backgroundColor: 'var(--surface-neutral-primary)',
+                          }}
+                        >
+                          <AccordionSummary
+                            expandIcon={
+                              <Box sx={{ display: "flex", alignItems: "center" }}>
+                                <Chip
+                                  label={bugsForOperation.length.toString()}
+                                  color="var(--chip-info-default)"
+                                  size="small"
+                                  sx={{ borderRadius: 999, mr: 2.5 }}
+                                />
+                                <ExpandMoreIcon className="MuiAccordionSummary-expandIcon" />
+                              </Box>
+                            }
+                            aria-controls={`panel-operation-${operation}`}
+                            id={`header-operation-${operation}`}
+                            sx={{
+                              minHeight: 48,
+                              paddingLeft: 0,
+                              "& .MuiAccordionSummary-content": {
+                                margin: 0,
+                              },
+                              "& .MuiAccordionSummary-expandIconWrapper": {
+                                transform: "none !important",
+                              },
+                            }}
+                          >
+                            <Typography variant="fieldHeader">{operation}</Typography>
+                          </AccordionSummary>
+                          <AccordionDetails>
+                            <Stack
+                              sx={{
+                                flexGrow: 1,
+                                alignItems: "stretch",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <List>
+                                {bugsForOperation.map((inner_item, idx) => {
+                                  // Используем хэш из самого бага, а не из испытания
+                                  const bugDisplayHash = inner_item.displayHash || null;
+                                  return (
+                                    <ListItem key={inner_item.ID || idx}>
+                                      <ListItemButton
+                                        onClick={() => {
+                                          setTablist([...tablist, inner_item]);
+                                        }}
+                                      >
+                                        <ListItemText
+                                          primary={
+                                            bugDisplayHash
+                                              ? `[${bugDisplayHash}] Баг ${inner_item.ID}`
+                                              : `Баг ${inner_item.ID}`
+                                          }
+                                        />
+                                      </ListItemButton>
+                                    </ListItem>
+                                  );
+                                })}
+                              </List>
+                            </Stack>
+                          </AccordionDetails>
+                        </Accordion>
+                      );
+                    });
+                  })()}
                 </>
               )
               : (

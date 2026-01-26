@@ -150,7 +150,18 @@ class DiffuzzerStorage {
             }
           }
 
-          x.text = displayHash ? `[${displayHash}] Баг ${x.ID}` : `Баг ${x.ID}`;
+          let bugHash = null;
+          if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+            bugHash = x.TestCases[0].Hash;
+          }
+          const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+          const operation = x.Operation || x.operation || "";
+          const operationText = operation ? ` (${operation})` : "";
+          x.text = bugDisplayHash 
+            ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+            : `Баг ${x.ID}${operationText}`;
+          x.displayHash = bugDisplayHash; 
           return x;
         })
 
@@ -251,7 +262,20 @@ class DiffuzzerStorage {
             fsset.add(fs.FsName);
           }
         }
-        x.text = displayHash ? `[${displayHash}] Баг ${x.ID}` : `Баг ${x.ID}`;
+        
+        // Извлекаем хэш из TestCases этого бага
+        let bugHash = null;
+        if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+          bugHash = x.TestCases[0].Hash;
+        }
+        const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+        const operation = x.Operation || x.operation || "";
+        const operationText = operation ? ` (${operation})` : "";
+        x.text = bugDisplayHash 
+          ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+          : `Баг ${x.ID}${operationText}`;
+        x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
         return x;
       })
 
@@ -463,7 +487,20 @@ class DiffuzzerStorage {
             fsset.add(fs.FsName);
           }
         }
-        x.text = displayHash ? `[${displayHash}] Баг ${x.ID}` : `Баг ${x.ID}`;
+        
+        // Извлекаем хэш из TestCases этого бага
+        let bugHash = null;
+        if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+          bugHash = x.TestCases[0].Hash;
+        }
+        const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+        const operation = x.Operation || x.operation || "";
+        const operationText = operation ? ` (${operation})` : "";
+        x.text = bugDisplayHash 
+          ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+          : `Баг ${x.ID}${operationText}`;
+        x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
         return x;
       })
 
