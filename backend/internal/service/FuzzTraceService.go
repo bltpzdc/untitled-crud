@@ -152,12 +152,33 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 			grouped, _ := os.ReadDir(filepath.Join(tmpDir, topLevel.Name()))
 			for _, f := range grouped {
 				if f.IsDir() && strings.HasPrefix(f.Name(), "trace-") {
+					// Извлекаем operation и ID из названия папки
+					// Форматы:
+					//   trace-LSeek-11356497047466617436
+					//   trace-LSeek-Truncate-15638835484753942827
 					operationDirSplited := strings.Split(f.Name(), "-")
-					operation := operationDirSplited[1]
+					// Все части, кроме "trace" и последней (ID), составляют название операции
+					operationParts := []string{}
+					if len(operationDirSplited) > 2 {
+						operationParts = operationDirSplited[1 : len(operationDirSplited)-1]
+					} else if len(operationDirSplited) > 1 {
+						operationParts = []string{operationDirSplited[1]}
+					}
+					operation := strings.Join(operationParts, "-")
+
+					// Извлекаем ID из последней части как строку (не пытаемся парсить в int64,
+					// чтобы не потерять очень большие значения)
+					var operationID *string = nil
+					if len(operationDirSplited) > 2 {
+						idStr := operationDirSplited[len(operationDirSplited)-1]
+						operationID = &idStr
+					}
+
 					crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
 						ID:        0,
 						RunID:     0, // yet unknown
 						Operation: operation,
+						FolderID:  operationID,
 						TestCases: nil,
 					}
 
@@ -288,6 +309,7 @@ func (s *FuzzTraceService) GetRuns(ctx context.Context) (map[int]model.Metadata,
 			Timestamp:    run.Timestamp,
 			FailureCount: run.FailureCount,
 			Tags:         run.Tags,
+			Comment:      run.Comment,
 		}
 	}
 	log.Printf("Successfully got fuzzer runs in the amount of %d", len(runs))
@@ -308,14 +330,46 @@ func (s *FuzzTraceService) GetRunsBySearchPattern(ctx context.Context, pattern m
 	if err != nil {
 		return nil, err
 	}
+	
+	var fromDateStart, toDateStart *time.Time
+	if pattern.FromDate != nil {
+		fromDateUTC := pattern.FromDate.UTC()
+		start := time.Date(fromDateUTC.Year(), fromDateUTC.Month(), fromDateUTC.Day(), 0, 0, 0, 0, time.UTC)
+		fromDateStart = &start
+	}
+	if pattern.ToDate != nil {
+		toDateUTC := pattern.ToDate.UTC()
+		start := time.Date(toDateUTC.Year(), toDateUTC.Month(), toDateUTC.Day(), 0, 0, 0, 0, time.UTC)
+		toDateStart = &start
+	}
+	
 	result := make([]model.FuzzerRun, 0)
 	for _, run := range runs {
 		t, err := time.Parse(time.RFC3339, run.Timestamp)
-		if err == nil {
-			if (pattern.ToDate == nil || t.Before(*pattern.ToDate)) &&
-				(pattern.FromDate == nil || t.After(*pattern.FromDate)) {
-				result = append(result, run)
+		if err != nil {
+			continue
+		}
+		
+		tUTC := t.UTC()
+		runDate := time.Date(tUTC.Year(), tUTC.Month(), tUTC.Day(), 0, 0, 0, 0, time.UTC)
+		
+		dateMatch := true
+		
+
+		if fromDateStart != nil {
+			if runDate.Before(*fromDateStart) {
+				dateMatch = false
 			}
+		}
+		
+		if toDateStart != nil {
+			if runDate.After(*toDateStart) {
+				dateMatch = false
+			}
+		}
+		
+		if dateMatch {
+			result = append(result, run)
 		}
 	}
 
@@ -326,4 +380,103 @@ func (s *FuzzTraceService) GetRunArchive(id int) (string, error) {
 	archivePath := s.calculateArchivePath(id)
 	_, err := os.Stat(archivePath)
 	return archivePath, err
+}
+
+func (s *FuzzTraceService) GetAllTags(ctx context.Context) ([]model.Tag, error) {
+	tags, err := s.fuzzTraceRepo.GetAllTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tags, nil
+}
+
+func (s *FuzzTraceService) UpdateRunTags(ctx context.Context, runID int, tags []string) error {
+	run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
+	if err != nil {
+		return err
+	}
+	if run == nil {
+		return fmt.Errorf("run with id %d not found", runID)
+	}
+	return s.fuzzTraceRepo.UpdateRunTags(ctx, runID, tags)
+}
+
+func (s *FuzzTraceService) UpdateRunComment(ctx context.Context, runID int, comment *string) error {
+	run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
+	if err != nil {
+		return err
+	}
+	if run == nil {
+		return fmt.Errorf("run with id %d not found", runID)
+	}
+	return s.fuzzTraceRepo.UpdateRunComment(ctx, runID, comment)
+}
+
+func (s *FuzzTraceService) DeleteRun(ctx context.Context, runID int) error {
+	run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
+	if err != nil {
+		return err
+	}
+	if run == nil {
+		return fmt.Errorf("run with id %d not found", runID)
+	}
+	return s.fuzzTraceRepo.DeleteRun(ctx, runID)
+}
+
+func (s *FuzzTraceService) GetRunsBySearchPatternWithTags(ctx context.Context, pattern model.RunSearchPattern, tags []string) ([]model.FuzzerRun, error) {
+	runs, err := s.fuzzTraceRepo.GetRuns(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]model.FuzzerRun, 0)
+	for _, run := range runs {
+		dateMatch := true
+		if pattern.FromDate != nil || pattern.ToDate != nil {
+			t, err := time.Parse(time.RFC3339, run.Timestamp)
+			if err != nil {
+				dateMatch = false
+			} else {
+				tUTC := t.UTC()
+				runDate := time.Date(tUTC.Year(), tUTC.Month(), tUTC.Day(), 0, 0, 0, 0, time.UTC)
+				
+				if pattern.FromDate != nil {
+					fromDateUTC := pattern.FromDate.UTC()
+					fromDateStart := time.Date(fromDateUTC.Year(), fromDateUTC.Month(), fromDateUTC.Day(), 0, 0, 0, 0, time.UTC)
+					if runDate.Before(fromDateStart) {
+						dateMatch = false
+					}
+				}
+
+				if pattern.ToDate != nil {
+					toDateUTC := pattern.ToDate.UTC()
+					toDateStart := time.Date(toDateUTC.Year(), toDateUTC.Month(), toDateUTC.Day(), 0, 0, 0, 0, time.UTC)
+			
+					if runDate.After(toDateStart) {
+						dateMatch = false
+					}
+				}
+			}
+		}
+
+		tagMatch := true
+		if len(tags) > 0 {
+			tagMatch = false
+			runTagSet := make(map[string]bool)
+			for _, tag := range run.Tags {
+				runTagSet[tag] = true
+			}
+			for _, filterTag := range tags {
+				if runTagSet[filterTag] {
+					tagMatch = true
+					break
+				}
+			}
+		}
+
+		if dateMatch && tagMatch {
+			result = append(result, run)
+		}
+	}
+
+	return result, nil
 }

@@ -26,7 +26,6 @@ export const theme = createTheme({
       },
     },
 
-    // Лейбл TextField
     MuiInputLabel: {
       styleOverrides: {
         root: {
@@ -36,7 +35,6 @@ export const theme = createTheme({
       },
     },
 
-    // Рамка и инпут для variant="outlined"
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
