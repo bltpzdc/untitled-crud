@@ -64,6 +64,8 @@ type CrashesGroupedByFailedOperation struct {
 	ID        int
 	RunID     int
 	Operation string
+	// FolderID как строка, чтобы не упираться в ограничения BIGINT и не терять точность
+	FolderID  *string `json:"folderId,omitempty"`
 	TestCases []TestCase
 }
 

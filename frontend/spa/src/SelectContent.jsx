@@ -12,6 +12,8 @@ import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import Chip from "@mui/material/Chip";
 import { datalayer } from "./DataLayer.js";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -49,17 +51,42 @@ function a11yProps(index) {
 export default function SelectContent({ callback }) {
   const [value, setValue] = React.useState(0);
   const [filterExpanded, setFilterExpanded] = React.useState(false);
+  const [mode, setMode] = React.useState("runs"); // "runs" | "errors"
   const [fromDate, setFromDate] = React.useState("");
   const [toDate, setToDate] = React.useState("");
   const [selectedTags, setSelectedTags] = React.useState([]);
   const [selectedOperations, setSelectedOperations] = React.useState([]);
+  const [selectedFsTypes, setSelectedFsTypes] = React.useState([]);
   const [availableTags, setAvailableTags] = React.useState([]);
   const [availableOperations, setAvailableOperations] = React.useState([]);
+  const [availableFsTypes, setAvailableFsTypes] = React.useState([]);
   const [isFiltered, setIsFiltered] = React.useState(false);
 
   const [_uploadDummy, setUploadDummy] = React.useState(null);
 
+  const openZipUploadDialog = React.useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".zip";
+    input.onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      try {
+        await datalayer.upload_zip(file);
+        setUploadDummy(null);
+        window.dispatchEvent(new Event("runsReload"));
+        setValue(0);
+      } catch (error) {
+        console.error("Upload failed:", error);
+        alert("Ошибка при загрузке файла: " + error.message);
+      }
+    };
+    input.click();
+  }, []);
+
   const handleChange = (_event, newvalue) => {
+    // Обычное переключение вкладок; загрузку ZIP для "+" обрабатываем через onClick на самой вкладке
     setValue(newvalue);
   };
   
@@ -70,7 +97,7 @@ export default function SelectContent({ callback }) {
   const handleApplyFilter = () => {
     setIsFiltered(true);
     window.dispatchEvent(new CustomEvent('applyFilter', { 
-      detail: { fromDate, toDate, selectedTags, selectedOperations } 
+      detail: { fromDate, toDate, selectedTags, selectedOperations, selectedFsTypes, mode } 
     }));
   };
   
@@ -80,6 +107,7 @@ export default function SelectContent({ callback }) {
     setToDate("");
     setSelectedTags([]);
     setSelectedOperations([]);
+    setSelectedFsTypes([]);
     window.dispatchEvent(new CustomEvent('clearFilter'));
   };
   
@@ -111,7 +139,15 @@ export default function SelectContent({ callback }) {
     const handleRunsReload = async () => {
       const data = await datalayer.get_runs();
       const operationsSet = new Set();
+      const fsTypeSet = new Set();
       data.forEach(run => {
+        if (Array.isArray(run.fstype)) {
+          run.fstype.forEach(fs => {
+            if (fs && String(fs).trim()) {
+              fsTypeSet.add(String(fs).trim());
+            }
+          });
+        }
         if (run.bugs && Array.isArray(run.bugs)) {
           run.bugs.forEach(bug => {
             const operation = bug.Operation || bug.operation;
@@ -122,7 +158,9 @@ export default function SelectContent({ callback }) {
         }
       });
       const operationsList = Array.from(operationsSet).sort();
+      const fsTypesList = Array.from(fsTypeSet).sort();
       setAvailableOperations(operationsList);
+      setAvailableFsTypes(fsTypesList);
     };
     
     window.addEventListener('tagsUpdated', handleTagsUpdate);
@@ -143,13 +181,53 @@ export default function SelectContent({ callback }) {
       sx={{ borderBottom: 1, borderColor: "divider" }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-neutral-primary)' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          <ToggleButtonGroup
+            exclusive
+            value={mode}
+            onChange={(_e, val) => {
+              if (val) {
+                setMode(val);
+              }
+            }}
+            sx={{
+              flexGrow: 1,
+              height: 48,
+              '& .MuiToggleButton-root': {
+                flex: 1,
+                textTransform: 'none',
+                fontSize: '14px',
+                fontWeight: 400,
+                color: 'var(--text-neutral-secondary)',
+                borderColor: 'var(--border-neutral-primary)',
+                '&.Mui-selected': {
+                  color: 'var(--text-neutral-primary)',
+                  fontWeight: 500,
+                  backgroundColor: 'var(--surface-neutral-secondary)',
+                  '&:hover': {
+                    backgroundColor: 'var(--surface-neutral-secondary)',
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: 'var(--surface-neutral-secondary)',
+                },
+              },
+            }}
+          >
+            <ToggleButton value="runs">
+              Испытания
+            </ToggleButton>
+            <ToggleButton value="errors">
+              Ошибки
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
         <Tabs
           value={value}
           onChange={handleChange}
           aria-label="Select mode"
           variant="standard"
           sx={{
-            flexGrow: 1,
             minHeight: 48,
             '& .MuiTabs-flexContainer': {
               borderBottom: 'none',
@@ -157,25 +235,12 @@ export default function SelectContent({ callback }) {
           }}
         >
           <Tab
-            label="Список испытаний"
-            {...a11yProps(0)}
-            sx={{
-              flexGrow: 1,
-              flexShrink: 1,
-              textTransform: 'none',
-              fontSize: '14px',
-              fontWeight: 400,
-              minHeight: 48,
-              color: 'var(--text-neutral-secondary)',
-              '&.Mui-selected': {
-                color: 'var(--text-neutral-primary)',
-                fontWeight: 500,
-              },
-            }}
-          />
-          <Tab
             label="+"
             {...a11yProps(1)}
+            onClick={() => {
+              // Явно открываем диалог выбора ZIP по клику на "+"
+              openZipUploadDialog();
+            }}
             sx={{
               width: 48,
               minWidth: 48,
@@ -282,6 +347,56 @@ export default function SelectContent({ callback }) {
             />
             <Autocomplete
               multiple
+              options={Array.isArray(availableFsTypes) ? availableFsTypes : []}
+              value={Array.isArray(selectedFsTypes) ? selectedFsTypes.map(fs => String(fs || '')) : []}
+              onChange={(event, newValue) => {
+                const stringFs = (newValue || [])
+                  .filter(fs => fs != null)
+                  .map(fs => String(fs).trim())
+                  .filter(fs => fs.length > 0);
+                setSelectedFsTypes(stringFs);
+              }}
+              isOptionEqualToValue={(option, value) => {
+                return String(option || '') === String(value || '');
+              }}
+              getOptionLabel={(option) => {
+                return String(option || '');
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Файловая система"
+                  size="small"
+                  placeholder="Выберите FS"
+                />
+              )}
+              renderTags={(value, getTagProps) => {
+                if (!Array.isArray(value)) {
+                  return null;
+                }
+                return value
+                  .filter(fs => fs != null && fs !== '')
+                  .map((option, index) => {
+                    const label = String(option).trim();
+                    
+                    if (!label) {
+                      return null;
+                    }
+                    
+                    return (
+                      <Chip
+                        key={`filter-fs-${index}-${label}`}
+                        label={label}
+                        size="small"
+                        {...getTagProps({ index })}
+                      />
+                    );
+                  })
+                  .filter(Boolean);
+              }}
+            />
+            <Autocomplete
+              multiple
               options={Array.isArray(availableOperations) ? availableOperations : []}
               value={Array.isArray(selectedOperations) ? selectedOperations.map(op => String(op || '')) : []}
               onChange={(event, newValue) => {
@@ -355,34 +470,13 @@ export default function SelectContent({ callback }) {
       )}
       
       <TabPanel value={value} index={0}>
-        <SideMenuContent callback={callback} />
+        <SideMenuContent callback={callback} mode={mode} />
       </TabPanel>
       <TabPanel value={value} index={1}>
         <Box sx={{ p: 3 }}>
           <Button
             variant="contained"
-            onClick={() => {
-              console.log("Clicked");
-              const input = document.createElement("input");
-              input.type = "file";
-              input.accept = ".zip";
-              input.onchange = async (e) => {
-                console.log("On change");
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                try {
-                  await datalayer.upload_zip(file);
-                  setUploadDummy(null);
-                  window.dispatchEvent(new Event('runsReload'));
-                  setValue(0);
-                } catch (error) {
-                  console.error("Upload failed:", error);
-                  alert("Ошибка при загрузке файла: " + error.message);
-                }
-              };
-              input.click();
-            }}
+            onClick={openZipUploadDialog}
             fullWidth
           >
             Загрузить ZIP

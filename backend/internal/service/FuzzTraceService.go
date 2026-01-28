@@ -152,12 +152,33 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 			grouped, _ := os.ReadDir(filepath.Join(tmpDir, topLevel.Name()))
 			for _, f := range grouped {
 				if f.IsDir() && strings.HasPrefix(f.Name(), "trace-") {
+					// Извлекаем operation и ID из названия папки
+					// Форматы:
+					//   trace-LSeek-11356497047466617436
+					//   trace-LSeek-Truncate-15638835484753942827
 					operationDirSplited := strings.Split(f.Name(), "-")
-					operation := operationDirSplited[1]
+					// Все части, кроме "trace" и последней (ID), составляют название операции
+					operationParts := []string{}
+					if len(operationDirSplited) > 2 {
+						operationParts = operationDirSplited[1 : len(operationDirSplited)-1]
+					} else if len(operationDirSplited) > 1 {
+						operationParts = []string{operationDirSplited[1]}
+					}
+					operation := strings.Join(operationParts, "-")
+
+					// Извлекаем ID из последней части как строку (не пытаемся парсить в int64,
+					// чтобы не потерять очень большие значения)
+					var operationID *string = nil
+					if len(operationDirSplited) > 2 {
+						idStr := operationDirSplited[len(operationDirSplited)-1]
+						operationID = &idStr
+					}
+
 					crashesGroupedBySpecificOperation := model.CrashesGroupedByFailedOperation{
 						ID:        0,
 						RunID:     0, // yet unknown
 						Operation: operation,
+						FolderID:  operationID,
 						TestCases: nil,
 					}
 

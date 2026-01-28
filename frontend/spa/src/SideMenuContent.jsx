@@ -13,18 +13,45 @@ import Autocomplete from "@mui/material/Autocomplete";
 
 import { datalayer } from "./DataLayer.js";
 
-export default function SideMenuContent({ callback }) { 
+export default function SideMenuContent({ callback, mode = "runs" }) { 
+  // mode: "runs" | "errors"
   const [allRuns, setAllRuns] = React.useState([]); 
   const [filteredRuns, setFilteredRuns] = React.useState([]); 
+  const [allErrors, setAllErrors] = React.useState([]); 
+  const [filteredErrors, setFilteredErrors] = React.useState([]); 
   const [fromDate, setFromDate] = React.useState("");
   const [toDate, setToDate] = React.useState("");
   const [selectedTags, setSelectedTags] = React.useState([]);
   const [selectedOperations, setSelectedOperations] = React.useState([]);
+  const [selectedFsTypes, setSelectedFsTypes] = React.useState([]);
   const [availableTags, setAvailableTags] = React.useState([]);
   const [availableOperations, setAvailableOperations] = React.useState([]);
   const [isFiltered, setIsFiltered] = React.useState(false);
 
-  const filterRuns = React.useCallback((runs, from, to, tags, operations) => {
+  // Вспомогательная функция: собрать все ошибки из всех испытаний
+  const collectAllErrors = React.useCallback((runs) => {
+    const errors = [];
+    runs.forEach((run) => {
+      if (run.bugs && Array.isArray(run.bugs)) {
+        run.bugs.forEach((bug) => {
+          const operation = bug.Operation || bug.operation || "";
+          const opKey = operation.trim() || "Без операции";
+          const bugId = bug.ID || bug.id;
+          const groupKey = `${run.id}-${bugId}-${opKey}`;
+          errors.push({
+            key: groupKey,
+            runId: run.id,
+            runText: run.text,
+            operation: opKey,
+            bug,
+          });
+        });
+      }
+    });
+    return errors;
+  }, []);
+
+  const filterRuns = React.useCallback((runs, from, to, tags, operations, fsTypes) => {
     let filtered = [...runs];
 
     if (from || to) {
@@ -63,6 +90,15 @@ export default function SideMenuContent({ callback }) {
       });
     }
 
+    if (fsTypes && fsTypes.length > 0) {
+      const fsSet = new Set(fsTypes.map(fs => String(fs).toLowerCase().trim()));
+      filtered = filtered.filter(run => {
+        if (!run.fstype || !Array.isArray(run.fstype)) return false;
+        const runFs = run.fstype.map(fs => String(fs).toLowerCase().trim());
+        return runFs.some(fs => fsSet.has(fs));
+      });
+    }
+
     if (operations && operations.length > 0) {
       const operationSet = new Set(operations.map(op => String(op).toLowerCase().trim()));
       filtered = filtered.filter(run => {
@@ -78,11 +114,82 @@ export default function SideMenuContent({ callback }) {
     return filtered;
   }, []);
 
+  const filterErrors = React.useCallback((errors, from, to, tags, operations, fsTypes, runs) => {
+    let filtered = [...errors];
+
+    // Фильтр по дате запуска
+    if (from || to) {
+      filtered = filtered.filter((err) => {
+        const run = runs.find((r) => r.id === err.runId);
+        if (!run || !run.datetime) return false;
+        
+        const runDate = new Date(run.datetime);
+        runDate.setHours(0, 0, 0, 0);
+        
+        if (from) {
+          const fromDateObj = new Date(from);
+          fromDateObj.setHours(0, 0, 0, 0);
+          if (runDate < fromDateObj) {
+            return false;
+          }
+        }
+        
+        if (to) {
+          const toDateObj = new Date(to);
+          toDateObj.setHours(23, 59, 59, 999);
+          if (runDate > toDateObj) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+    }
+
+    // Фильтр по тегам запуска
+    if (tags && tags.length > 0) {
+      const tagSet = new Set(tags.map((t) => String(t).toLowerCase().trim()));
+      filtered = filtered.filter((err) => {
+        const run = runs.find((r) => r.id === err.runId);
+        if (!run || !run.tags || !Array.isArray(run.tags)) return false;
+        const runTags = run.tags.map((t) => String(t).toLowerCase().trim());
+        return runTags.some((tag) => tagSet.has(tag));
+      });
+    }
+
+    // Фильтр по файловым системам запуска
+    if (fsTypes && fsTypes.length > 0) {
+      const fsSet = new Set(fsTypes.map(fs => String(fs).toLowerCase().trim()));
+      filtered = filtered.filter((err) => {
+        const run = runs.find((r) => r.id === err.runId);
+        if (!run || !run.fstype || !Array.isArray(run.fstype)) return false;
+        const runFs = run.fstype.map(fs => String(fs).toLowerCase().trim());
+        return runFs.some(fs => fsSet.has(fs));
+      });
+    }
+
+    // Фильтр по типу операции
+    if (operations && operations.length > 0) {
+      const operationSet = new Set(
+        operations.map((op) => String(op).toLowerCase().trim())
+      );
+      filtered = filtered.filter((err) => {
+        const op = String(err.operation || "").toLowerCase().trim();
+        return op && operationSet.has(op);
+      });
+    }
+
+    return filtered;
+  }, []);
+
   React.useEffect(() => {
     async function get_runs() {
       const data = await datalayer.get_runs();
       setAllRuns(data);
       setFilteredRuns(data);
+      const allErrs = collectAllErrors(data);
+      setAllErrors(allErrs);
+      setFilteredErrors(allErrs);
       
       // Собираем все уникальные операции из багов
       const operationsSet = new Set();
@@ -129,7 +236,9 @@ export default function SideMenuContent({ callback }) {
       console.log("SideMenuContent: Run deleted event received, reloading runs.");
       const data = await datalayer.get_runs();
       setAllRuns(data);
-      
+      const allErrs = collectAllErrors(data);
+      setAllErrors(allErrs);
+
       const operationsSet = new Set();
       data.forEach(run => {
         if (run.bugs && Array.isArray(run.bugs)) {
@@ -143,9 +252,11 @@ export default function SideMenuContent({ callback }) {
       });
       const operationsList = Array.from(operationsSet).sort();
       setAvailableOperations(operationsList);
-      
-      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
-      setFilteredRuns(filtered);
+
+      const filteredRunsNew = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes);
+      setFilteredRuns(filteredRunsNew);
+      const filteredErrorsNew = filterErrors(allErrs, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes, data);
+      setFilteredErrors(filteredErrorsNew);
     };
     
     const handleRunUpdated = async (event) => {
@@ -156,7 +267,9 @@ export default function SideMenuContent({ callback }) {
       
       const data = await datalayer.get_runs();
       setAllRuns(data);
-      
+      const allErrs = collectAllErrors(data);
+      setAllErrors(allErrs);
+
       const operationsSet = new Set();
       data.forEach(run => {
         if (run.bugs && Array.isArray(run.bugs)) {
@@ -170,16 +283,20 @@ export default function SideMenuContent({ callback }) {
       });
       const operationsList = Array.from(operationsSet).sort();
       setAvailableOperations(operationsList);
-      
-      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
-      setFilteredRuns(filtered);
+
+      const filteredRunsNew = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes);
+      setFilteredRuns(filteredRunsNew);
+      const filteredErrorsNew = filterErrors(allErrs, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes, data);
+      setFilteredErrors(filteredErrorsNew);
     };
     
     const handleRunsReload = async () => {
       console.log("SideMenuContent: Runs reload event received, reloading runs.");
       const data = await datalayer.get_runs();
       setAllRuns(data);
-      
+      const allErrs = collectAllErrors(data);
+      setAllErrors(allErrs);
+
       const operationsSet = new Set();
       data.forEach(run => {
         if (run.bugs && Array.isArray(run.bugs)) {
@@ -193,9 +310,11 @@ export default function SideMenuContent({ callback }) {
       });
       const operationsList = Array.from(operationsSet).sort();
       setAvailableOperations(operationsList);
-      
-      const filtered = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations);
-      setFilteredRuns(filtered);
+
+      const filteredRunsNew = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes);
+      setFilteredRuns(filteredRunsNew);
+      const filteredErrorsNew = filterErrors(allErrs, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes, data);
+      setFilteredErrors(filteredErrorsNew);
     };
     
     window.addEventListener('tagsUpdated', handleTagsUpdate);
@@ -216,11 +335,12 @@ export default function SideMenuContent({ callback }) {
 
   React.useEffect(() => {
     const handleApplyFilter = (event) => {
-      const { fromDate: fd, toDate: td, selectedTags: st, selectedOperations: so } = event.detail || {};
+      const { fromDate: fd, toDate: td, selectedTags: st, selectedOperations: so, selectedFsTypes: sfs } = event.detail || {};
       setFromDate(fd || "");
       setToDate(td || "");
       setSelectedTags(st || []);
       setSelectedOperations(so || []);
+      setSelectedFsTypes(sfs || []);
       setIsFiltered(true);
     };
     
@@ -230,6 +350,7 @@ export default function SideMenuContent({ callback }) {
       setToDate("");
       setSelectedTags([]);
       setSelectedOperations([]);
+      setSelectedFsTypes([]);
     };
     
     window.addEventListener('applyFilter', handleApplyFilter);
@@ -243,23 +364,66 @@ export default function SideMenuContent({ callback }) {
   
   React.useEffect(() => {
     if (isFiltered) {
-      const filtered = filterRuns(allRuns, fromDate || null, toDate || null, selectedTags, selectedOperations);
-      setFilteredRuns(filtered);
+      const filteredRunsNew = filterRuns(allRuns, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes);
+      setFilteredRuns(filteredRunsNew);
+      const filteredErrorsNew = filterErrors(allErrors, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes, allRuns);
+      setFilteredErrors(filteredErrorsNew);
     } else {
       setFilteredRuns(allRuns);
+      setFilteredErrors(allErrors);
     }
-  }, [allRuns, fromDate, toDate, selectedTags, selectedOperations, isFiltered, filterRuns]);
+  }, [allRuns, allErrors, fromDate, toDate, selectedTags, selectedOperations, selectedFsTypes, isFiltered, filterRuns, filterErrors]);
+
+  const listData = mode === "errors" ? filteredErrors : filteredRuns;
 
   return (
     <List sx={{ flexGrow: 1, overflow: "auto", padding: 0, height: "100%" }}>
-        {filteredRuns.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: 'var(--text-neutral-secondary)' }}>
-              Нет испытаний
-            </Typography>
-          </Box>
-        ) : (
-          filteredRuns.map((item, index) => (
+      {listData.length === 0 ? (
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: 'var(--text-neutral-secondary)' }}>
+            {mode === "errors" ? "Нет ошибок" : "Нет испытаний"}
+          </Typography>
+        </Box>
+      ) : (
+        listData.map((item, index) => {
+          if (mode === "errors") {
+            return (
+              <ListItem key={item.key || index} sx={{ padding: 0 }}>
+                <ListItemButton
+                  onClick={() => {
+                    const bugWithDatatype = { ...(item.bug || {}), datatype: "bug" };
+                    callback(bugWithDatatype);
+                  }}
+                  sx={{
+                    padding: '12px 16px',
+                    '&:hover': {
+                      backgroundColor: 'var(--surface-neutral-secondary)',
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={`${item.operation}`}
+                    secondary={item.runText}
+                    primaryTypographyProps={{
+                      sx: {
+                        color: 'var(--text-neutral-primary)',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                      },
+                    }}
+                    secondaryTypographyProps={{
+                      sx: {
+                        color: 'var(--text-neutral-secondary)',
+                        fontSize: '12px',
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          }
+
+          return (
             <ListItem key={index} sx={{ padding: 0 }}>
               <ListItemButton
                 onClick={() => {
@@ -272,7 +436,7 @@ export default function SideMenuContent({ callback }) {
                   },
                 }}
               >
-                <ListItemText 
+                <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{
                     sx: {
@@ -284,8 +448,9 @@ export default function SideMenuContent({ callback }) {
                 />
               </ListItemButton>
             </ListItem>
-          ))
-        )}
+          );
+        })
+      )}
     </List>
   );
 }

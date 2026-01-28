@@ -161,10 +161,15 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 		opCrash := &run.CrashesGroupedByFailedOperation[i]
 		opCrash.RunID = runID
 
+		// folder_id теперь строка, сохраняем как есть (или NULL)
+		var folderID interface{}
+		if opCrash.FolderID != nil {
+			folderID = *opCrash.FolderID
+		}
 		err := r.db.QueryRow(ctx,
-			`INSERT INTO op_crashes (run_id, operation) 
-             VALUES ($1, $2) RETURNING id`,
-			opCrash.RunID, opCrash.Operation,
+			`INSERT INTO op_crashes (run_id, operation, folder_id) 
+             VALUES ($1, $2, $3) RETURNING id`,
+			opCrash.RunID, opCrash.Operation, folderID,
 		).Scan(&opCrash.ID)
 		if err != nil {
 			return err
@@ -207,7 +212,7 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 
 func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([]model.CrashesGroupedByFailedOperation, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, operation FROM op_crashes WHERE run_id = $1",
+		"SELECT id, operation, folder_id FROM op_crashes WHERE run_id = $1",
 		runID,
 	)
 	if err != nil {
@@ -218,7 +223,7 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
 	var opCrashes []model.CrashesGroupedByFailedOperation
 	for rows.Next() {
 		var opCrash model.CrashesGroupedByFailedOperation
-		if err := rows.Scan(&opCrash.ID, &opCrash.Operation); err != nil {
+		if err := rows.Scan(&opCrash.ID, &opCrash.Operation, &opCrash.FolderID); err != nil {
 			return nil, err
 		}
 

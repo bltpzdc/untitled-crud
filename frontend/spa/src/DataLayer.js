@@ -4,6 +4,7 @@ class DiffuzzerStorage {
   constructor() {
     this.runsById = {};
     this.bugsByKey = {};
+    this.minRunId = null; // Минимальный ID для нумерации, начинающейся с 0
   }
 
   async _fetchJson(path) {
@@ -27,6 +28,9 @@ class DiffuzzerStorage {
   //   bugs: string[]   
   //}
   async get_runs() {
+    // Очищаем кэш, чтобы удаленные испытания не оставались
+    this.runsById = {};
+    
     if (LOCAL_MODE) {
       const make = (id, fs1, fs2, version) => {
         this.runsById[id] = {
@@ -121,6 +125,14 @@ class DiffuzzerStorage {
       make(3, "xfs", "btrfs", "0xbadcoffee");
     } else {
       const runs = await this._fetchJson("/backend/runs/metadatas");
+      
+      // Сохраняем минимальный ID при первой загрузке всех испытаний
+      if (this.minRunId === null && runs.length > 0) {
+        this.minRunId = Math.min(...runs.map(r => r.id));
+      }
+      
+      // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+      const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
       for (const run of runs) {
         let runbugs = await this._fetchJson(
@@ -141,7 +153,7 @@ class DiffuzzerStorage {
         
         const displayHash = runHash ? runHash.substring(0, 8) : null;
         
-        runbugs = runbugs.filter(x => x.TestCases.length >= 2);
+        // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
         const fsset = new Set();
         runbugs = runbugs.map(x => {
           for (const tc of x.TestCases){
@@ -196,12 +208,22 @@ class DiffuzzerStorage {
           }
         }
         
+        // Форматируем дату для отображения
+        const formattedDate = runDateTime.toLocaleDateString("ru-RU", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+        
+        // Номер испытания основан на ID, а не на позиции в списке
+        const runNumber = run.id - minId;
+
         this.runsById[run.id] = {
           datatype: "run",
           id: run.id,
           hash: runHash,
           displayHash: displayHash,
-          text: displayHash ? `${displayHash}` : `Испытание ${run.id}`,
+          text: `Испытание №${runNumber} от ${formattedDate}`,
           datetime: runDateTime,
           run_time: runDateTime,
 
@@ -236,6 +258,9 @@ class DiffuzzerStorage {
     }
 
     const runs = await this._fetchJson(url);
+    
+    // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+    const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
     for (const run of runs) {
       let runbugs = await this._fetchJson(
@@ -254,7 +279,7 @@ class DiffuzzerStorage {
       
       const displayHash = runHash ? runHash.substring(0, 8) : null;
       
-      runbugs = runbugs.filter(x => x.TestCases.length >= 2);
+      // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
       const fsset = new Set();
       runbugs = runbugs.map(x => {
         for (const tc of x.TestCases){
@@ -307,12 +332,22 @@ class DiffuzzerStorage {
         }
       }
       
+      // Форматируем дату для отображения
+      const formattedDate = runDateTime.toLocaleDateString("ru-RU", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      
+      // Номер испытания основан на ID, а не на позиции в списке
+      const runNumber = run.id - minId;
+      
       this.runsById[run.id] = {
         datatype: "run",
         id: run.id,
         hash: runHash,
         displayHash: displayHash,
-        text: displayHash ? `${displayHash}` : `Испытание ${run.id}`,
+        text: `Испытание №${runNumber} от ${formattedDate}`,
         datetime: runDateTime,
         run_time: runDateTime,
 
@@ -354,6 +389,32 @@ class DiffuzzerStorage {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to delete run: ${errorText}`);
+    }
+  }
+
+  async download_run_archive(runId) {
+    try {
+      const response = await fetch(`/backend/runs/archive/${runId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to download archive: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `run-${runId}-archive.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error in download_run_archive:", error);
+      throw error;
     }
   }
 
@@ -461,6 +522,9 @@ class DiffuzzerStorage {
     }
 
     const runs = await this._fetchJson(url);
+    
+    // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+    const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
     for (const run of runs) {
       let runbugs = await this._fetchJson(
@@ -479,7 +543,7 @@ class DiffuzzerStorage {
       
       const displayHash = runHash ? runHash.substring(0, 8) : null;
       
-      runbugs = runbugs.filter(x => x.TestCases.length >= 2);
+      // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
       const fsset = new Set();
       runbugs = runbugs.map(x => {
         for (const tc of x.TestCases){

@@ -38,6 +38,8 @@ type CrashesGroupedByFailedOperation struct {
 	ID        int        `db:"id"`
 	RunID     int        `db:"run_id"`
 	Operation string     `db:"operation"`
+	// FolderID хранится как строка, чтобы не терять большие значения, не влезающие в BIGINT
+	FolderID  *string    `db:"folder_id"`
 	TestCases []TestCase `db:"-"`
 }
 
