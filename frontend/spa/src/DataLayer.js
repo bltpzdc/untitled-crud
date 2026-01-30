@@ -4,9 +4,9 @@ class DiffuzzerStorage {
   constructor() {
     this.runsById = {};
     this.bugsByKey = {};
+    this.minRunId = null; // Минимальный ID для нумерации, начинающейся с 0
   }
 
-  // Внутренний метод для загрузки JSON
   async _fetchJson(path) {
     const res = await fetch(path);
     if (!res.ok) {
@@ -24,10 +24,13 @@ class DiffuzzerStorage {
   //   fs2: string,
   //   version: string,
   //   comment: string,
-  //   tags: string[]	//массив тегов
-  //   bugs: string[]   // массив хэшей вида 'XHwSwS4tX2U-fpF2paBIfw=='
+  //   tags: string[]	
+  //   bugs: string[]   
   //}
   async get_runs() {
+    // Очищаем кэш, чтобы удаленные испытания не оставались
+    this.runsById = {};
+    
     if (LOCAL_MODE) {
       const make = (id, fs1, fs2, version) => {
         this.runsById[id] = {
@@ -122,6 +125,14 @@ class DiffuzzerStorage {
       make(3, "xfs", "btrfs", "0xbadcoffee");
     } else {
       const runs = await this._fetchJson("/backend/runs/metadatas");
+      
+      // Сохраняем минимальный ID при первой загрузке всех испытаний
+      if (this.minRunId === null && runs.length > 0) {
+        this.minRunId = Math.min(...runs.map(r => r.id));
+      }
+      
+      // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+      const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
       for (const run of runs) {
         let runbugs = await this._fetchJson(
@@ -134,7 +145,15 @@ class DiffuzzerStorage {
         if (runbugs.length == 0){
           continue
         }
-        runbugs = runbugs.filter(x => x.TestCases.length >= 2);
+        
+        let runHash = null;
+        if (runbugs.length > 0 && runbugs[0].TestCases && runbugs[0].TestCases.length > 0) {
+          runHash = runbugs[0].TestCases[0].Hash;
+        }
+        
+        const displayHash = runHash ? runHash.substring(0, 8) : null;
+        
+        // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
         const fsset = new Set();
         runbugs = runbugs.map(x => {
           for (const tc of x.TestCases){
@@ -142,28 +161,79 @@ class DiffuzzerStorage {
               fsset.add(fs.FsName);
             }
           }
-          x.text = `Баг ${x.ID}`;
+
+          let bugHash = null;
+          if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+            bugHash = x.TestCases[0].Hash;
+          }
+          const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+          const operation = x.Operation || x.operation || "";
+          const operationText = operation ? ` (${operation})` : "";
+          x.text = bugDisplayHash 
+            ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+            : `Баг ${x.ID}${operationText}`;
+          x.displayHash = bugDisplayHash; 
           return x;
         })
 
         console.log("runbugs");
         console.log(runbugs);
         
+        const runTags = run.metadata && Array.isArray(run.metadata.tags) 
+          ? run.metadata.tags
+              .filter(tag => tag != null && tag !== '')
+              .map(tag => {
+                if (typeof tag === 'string') {
+                  return tag.trim();
+                }
+                if (tag && typeof tag === 'object') {
+                  const tagName = tag.Name || tag.name;
+                  if (tagName && typeof tagName === 'string') {
+                    return tagName.trim();
+                  }
+                  console.warn("Invalid tag object in run metadata:", tag);
+                  return null;
+                }
+                return String(tag).trim();
+              })
+              .filter(tag => tag != null && tag.length > 0)
+          : [];
+        
+        let runDateTime = new Date();
+        if (run.metadata && run.metadata.timestamp) {
+          const parsedDate = new Date(run.metadata.timestamp);
+          if (!isNaN(parsedDate.getTime())) {
+            runDateTime = parsedDate;
+          }
+        }
+        
+        // Форматируем дату для отображения
+        const formattedDate = runDateTime.toLocaleDateString("ru-RU", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+        
+        // Номер испытания основан на ID, а не на позиции в списке
+        const runNumber = run.id - minId;
 
         this.runsById[run.id] = {
           datatype: "run",
           id: run.id,
-          text: `Испытание ${run.id}`,
-          datetime: new Date(),
-          run_time: new Date(),
+          hash: runHash,
+          displayHash: displayHash,
+          text: `Испытание №${runNumber} от ${formattedDate}`,
+          datetime: runDateTime,
+          run_time: runDateTime,
 
           fstype: Array.from(fsset),
           analyzer: "Diffuzzer",
           version: run.version,
-          comment: (run.comment === null || run.comment === undefined)
-            ? ""
-            : run.comment,
-          tags: Array.isArray(run.tags) ? run.tags : [],
+          comment: (run.metadata && run.metadata.comment !== null && run.metadata.comment !== undefined)
+            ? run.metadata.comment
+            : "",
+          tags: runTags,
           bugs: runbugs,
         };
       }
@@ -171,11 +241,184 @@ class DiffuzzerStorage {
     return Object.values(this.runsById);
   }
 
-  /**
-   * Загрузка zip-файла на бэкенд.
-   * @param {File} file - объект File, например из <input type="file">
-   * @returns {Promise<any>} - JSON-ответ бэкенда (или что он возвращает)
-   */
+
+  async get_runs_by_search(fromDate = null, toDate = null) {
+    this.runsById = {};
+    
+    let url = "/backend/runs/search";
+    const params = new URLSearchParams();
+    if (fromDate) {
+      params.append("fromdate", fromDate);
+    }
+    if (toDate) {
+      params.append("todate", toDate);
+    }
+    if (params.toString()) {
+      url += "?" + params.toString();
+    }
+
+    const runs = await this._fetchJson(url);
+    
+    // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+    const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
+
+    for (const run of runs) {
+      let runbugs = await this._fetchJson(
+        `/backend/runs/details/${run.id}`,
+      );
+
+      runbugs = runbugs.crashes;
+      if (runbugs.length == 0){
+        continue
+      }
+      
+      let runHash = null;
+      if (runbugs.length > 0 && runbugs[0].TestCases && runbugs[0].TestCases.length > 0) {
+        runHash = runbugs[0].TestCases[0].Hash;
+      }
+      
+      const displayHash = runHash ? runHash.substring(0, 8) : null;
+      
+      // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
+      const fsset = new Set();
+      runbugs = runbugs.map(x => {
+        for (const tc of x.TestCases){
+          for (const fs of tc.FSSummaries){
+            fsset.add(fs.FsName);
+          }
+        }
+        
+        // Извлекаем хэш из TestCases этого бага
+        let bugHash = null;
+        if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+          bugHash = x.TestCases[0].Hash;
+        }
+        const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+        const operation = x.Operation || x.operation || "";
+        const operationText = operation ? ` (${operation})` : "";
+        x.text = bugDisplayHash 
+          ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+          : `Баг ${x.ID}${operationText}`;
+        x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
+        return x;
+      })
+
+      const runTags = run.metadata && Array.isArray(run.metadata.tags) 
+        ? run.metadata.tags
+            .filter(tag => tag != null && tag !== '')
+            .map(tag => {
+              if (typeof tag === 'string') {
+                return tag.trim();
+              }
+              if (tag && typeof tag === 'object') {
+                const tagName = tag.Name || tag.name;
+                if (tagName && typeof tagName === 'string') {
+                  return tagName.trim();
+                }
+                console.warn("Invalid tag object in run metadata:", tag);
+                return null;
+              }
+              return String(tag).trim();
+            })
+            .filter(tag => tag != null && tag.length > 0)
+        : [];
+
+      let runDateTime = new Date();
+      if (run.metadata && run.metadata.timestamp) {
+        const parsedDate = new Date(run.metadata.timestamp);
+        if (!isNaN(parsedDate.getTime())) {
+          runDateTime = parsedDate;
+        }
+      }
+      
+      // Форматируем дату для отображения
+      const formattedDate = runDateTime.toLocaleDateString("ru-RU", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      
+      // Номер испытания основан на ID, а не на позиции в списке
+      const runNumber = run.id - minId;
+      
+      this.runsById[run.id] = {
+        datatype: "run",
+        id: run.id,
+        hash: runHash,
+        displayHash: displayHash,
+        text: `Испытание №${runNumber} от ${formattedDate}`,
+        datetime: runDateTime,
+        run_time: runDateTime,
+
+        fstype: Array.from(fsset),
+        analyzer: "Diffuzzer",
+        version: run.version,
+        comment: (run.comment === null || run.comment === undefined)
+          ? ""
+          : run.comment,
+        tags: runTags,
+        bugs: runbugs,
+      };
+    }
+    return Object.values(this.runsById);
+  }
+
+
+  async update_run_comment(runId, comment) {
+    const response = await fetch(`/backend/runs/${runId}/comment`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ comment: comment || null }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update comment: ${errorText}`);
+    }
+  }
+
+
+  async delete_run(runId) {
+    const response = await fetch(`/backend/runs/${runId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to delete run: ${errorText}`);
+    }
+  }
+
+  async download_run_archive(runId) {
+    try {
+      const response = await fetch(`/backend/runs/archive/${runId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to download archive: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `run-${runId}-archive.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error in download_run_archive:", error);
+      throw error;
+    }
+  }
+
+
   async upload_zip(file) {
     const formData = new FormData();
 
@@ -184,8 +427,6 @@ class DiffuzzerStorage {
     const res = await fetch("/backend/v1/runs", {
       method: "POST",
       body: formData,
-      // ВАЖНО: не ставить вручную headers['Content-Type'],
-      // браузер сам проставит корректный multipart/form-data с boundary
     });
 
     if (!res.ok) {
@@ -198,6 +439,173 @@ class DiffuzzerStorage {
       id: data.id,
       status: data.status,
     };
+  }
+
+
+  async get_all_tags() {
+    const tags = await this._fetchJson("/backend/tags");
+    console.log("Raw tags from API:", tags);
+    if (Array.isArray(tags)) {
+      const tagStrings = tags
+        .filter(t => t != null)
+        .map(t => {
+          if (typeof t === 'string') {
+            return t.trim();
+          }
+          if (t && typeof t === 'object') {
+            const tagName = t.Name || t.name;
+            if (tagName) {
+              if (typeof tagName === 'string') {
+                return tagName.trim();
+              }
+              console.warn("Tag name is not a string:", tagName, "in tag:", t);
+              return null;
+            }
+            console.warn("Tag object without 'name' or 'Name' field:", t);
+            return null;
+          }
+          return String(t).trim();
+        })
+        .filter(name => name != null && name.length > 0);
+      console.log("Processed tags (strings only):", tagStrings);
+      return tagStrings;
+    }
+    console.warn("Tags is not an array:", tags);
+    return [];
+  }
+
+  async update_run_tags(runId, tags) {
+    try {
+      const url = `/backend/runs/${runId}/tags`;
+      console.log("Updating tags for run", runId, "with tags", tags, "URL:", url);
+      
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tags }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error response:", errorText, "Status:", res.status);
+        throw new Error(`Failed to update tags: ${res.status} - ${errorText}`);
+      }
+
+      const result = await res.json();
+      console.log("Tags updated successfully:", result);
+      return result;
+    } catch (error) {
+      console.error("Error in update_run_tags:", error);
+      throw error;
+    }
+  }
+
+
+  async get_runs_by_search_with_tags(fromDate = null, toDate = null, tags = []) {
+    this.runsById = {};
+    
+    let url = "/backend/runs/search-with-tags";
+    const params = new URLSearchParams();
+    if (fromDate) {
+      params.append("fromdate", fromDate);
+    }
+    if (toDate) {
+      params.append("todate", toDate);
+    }
+    if (tags.length > 0) {
+      params.append("tags", tags.join(","));
+    }
+    if (params.toString()) {
+      url += "?" + params.toString();
+    }
+
+    const runs = await this._fetchJson(url);
+    
+    // Используем сохраненный минимальный ID или находим новый, если он еще не был установлен
+    const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
+
+    for (const run of runs) {
+      let runbugs = await this._fetchJson(
+        `/backend/runs/details/${run.id}`,
+      );
+
+      runbugs = runbugs.crashes;
+      if (runbugs.length == 0){
+        continue
+      }
+      
+      let runHash = null;
+      if (runbugs.length > 0 && runbugs[0].TestCases && runbugs[0].TestCases.length > 0) {
+        runHash = runbugs[0].TestCases[0].Hash;
+      }
+      
+      const displayHash = runHash ? runHash.substring(0, 8) : null;
+      
+      // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
+      const fsset = new Set();
+      runbugs = runbugs.map(x => {
+        for (const tc of x.TestCases){
+          for (const fs of tc.FSSummaries){
+            fsset.add(fs.FsName);
+          }
+        }
+        
+        // Извлекаем хэш из TestCases этого бага
+        let bugHash = null;
+        if (x.TestCases && x.TestCases.length > 0 && x.TestCases[0].Hash) {
+          bugHash = x.TestCases[0].Hash;
+        }
+        const bugDisplayHash = bugHash ? bugHash.substring(0, 8) : null;
+
+        const operation = x.Operation || x.operation || "";
+        const operationText = operation ? ` (${operation})` : "";
+        x.text = bugDisplayHash 
+          ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
+          : `Баг ${x.ID}${operationText}`;
+        x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
+        return x;
+      })
+
+      this.runsById[run.id] = {
+        datatype: "run",
+        id: run.id,
+        hash: runHash,
+        displayHash: displayHash,
+        text: displayHash ? `${displayHash}` : `Испытание ${run.id}`,
+        datetime: new Date(),
+        run_time: new Date(),
+
+        fstype: Array.from(fsset),
+        analyzer: "Diffuzzer",
+        version: run.version,
+        comment: (run.comment === null || run.comment === undefined)
+          ? ""
+          : run.comment,
+        tags: run.metadata && Array.isArray(run.metadata.tags) 
+          ? run.metadata.tags
+              .filter(tag => tag != null && tag !== '')
+              .map(tag => {
+                if (typeof tag === 'string') {
+                  return tag.trim();
+                }
+                if (tag && typeof tag === 'object') {
+                  const tagName = tag.Name || tag.name;
+                  if (tagName && typeof tagName === 'string') {
+                    return tagName.trim();
+                  }
+                  console.warn("Invalid tag object in run metadata:", tag);
+                  return null;
+                }
+                return String(tag).trim();
+              })
+              .filter(tag => tag != null && tag.length > 0)
+          : [],
+        bugs: runbugs,
+      };
+    }
+    return Object.values(this.runsById);
   }
 }
 

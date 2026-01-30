@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS fuzzer_runs (
     id SERIAL PRIMARY KEY,
     timestamp VARCHAR(30),
-    failure_count INTEGER NOT NULL DEFAULT 0
+    failure_count INTEGER NOT NULL DEFAULT 0,
+    comment TEXT
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS run_tags (
 CREATE TABLE IF NOT EXISTS op_crashes (
     id SERIAL PRIMARY KEY,
     run_id INTEGER NOT NULL REFERENCES fuzzer_runs(id) ON DELETE CASCADE,
-    operation VARCHAR(20) NOT NULL
+    operation VARCHAR(20) NOT NULL,
+    folder_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS test_cases (
@@ -44,3 +46,23 @@ CREATE TABLE IF NOT EXISTS fs_test_summaries (
 INSERT INTO tags (name) VALUES 
 ('ext4'), ('xfs')
 ON CONFLICT (name) DO NOTHING;
+
+-- Migration: Ensure folder_id column exists on op_crashes and has TEXT type
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'op_crashes' AND column_name = 'folder_id'
+    ) THEN
+        ALTER TABLE op_crashes ADD COLUMN folder_id TEXT;
+    ELSE
+        -- Если колонка уже есть, но имеет другой тип, приводим к TEXT
+        IF EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name = 'op_crashes' AND column_name = 'folder_id' AND data_type <> 'text'
+        ) THEN
+            ALTER TABLE op_crashes ALTER COLUMN folder_id TYPE TEXT USING folder_id::text;
+        END IF;
+    END IF;
+END $$;

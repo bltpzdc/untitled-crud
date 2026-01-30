@@ -11,6 +11,7 @@ type Metadata struct {
 	Timestamp    string   `json:"timestamp"`
 	FailureCount int      `json:"failureCount"`
 	Tags         []string `json:"tags"`
+	Comment      *string  `json:"comment,omitempty"`
 }
 
 type FsOperation struct {
@@ -23,6 +24,7 @@ type FuzzerRun struct {
 	ID                              int                               `db:"id"`
 	Timestamp                       string                            `db:"timestamp"`
 	FailureCount                    int                               `db:"failure_count"`
+	Comment                         *string                           `db:"comment"`
 	Tags                            []string                          `db:"-"`
 	CrashesGroupedByFailedOperation []CrashesGroupedByFailedOperation `db:"-"`
 }
@@ -36,6 +38,8 @@ type CrashesGroupedByFailedOperation struct {
 	ID        int        `db:"id"`
 	RunID     int        `db:"run_id"`
 	Operation string     `db:"operation"`
+	// FolderID хранится как строка, чтобы не терять большие значения, не влезающие в BIGINT
+	FolderID  *string    `db:"folder_id"`
 	TestCases []TestCase `db:"-"`
 }
 

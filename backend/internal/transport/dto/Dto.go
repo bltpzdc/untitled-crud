@@ -14,6 +14,7 @@ type Metadata struct {
 	Timestamp    string   `json:"timestamp"`
 	FailureCount int      `json:"failureCount"`
 	Tags         []string `json:"tags"`
+	Comment      *string  `json:"comment,omitempty"`
 }
 
 type RunDetailsWithId struct {
@@ -63,6 +64,8 @@ type CrashesGroupedByFailedOperation struct {
 	ID        int
 	RunID     int
 	Operation string
+	// FolderID как строка, чтобы не упираться в ограничения BIGINT и не терять точность
+	FolderID  *string `json:"folderId,omitempty"`
 	TestCases []TestCase
 }
 
