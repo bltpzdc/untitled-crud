@@ -50,6 +50,14 @@ type TestCase struct {
 	TotalOperations int             `db:"total_operations"`
 	Test            pgtype.Text     `db:"test"`
 	FSSummaries     []FsTestSummary `db:"-"`
+	Reasons         []TestReason    `db:"-"`
+}
+
+type TestReason struct {
+	ID         int         `db:"id"`
+	TestCaseID int         `db:"test_case_id"`
+	OpNumber   int         `db:"op_number"`
+	Diff       pgtype.Text `db:"diff"`
 }
 
 type FsTestSummary struct {
@@ -60,6 +68,8 @@ type FsTestSummary struct {
 	FsFailureCount  int             `db:"fs_failure_count"`
 	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
 	FsTrace         pgtype.Text     `db:"fs_trace"`
+	FsStdout        pgtype.Text     `db:"fs_stdout"`
+	FsStderr        pgtype.Text     `db:"fs_stderr"`
 }
 
 type RunSearchPattern struct {

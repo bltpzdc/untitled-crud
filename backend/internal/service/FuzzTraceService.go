@@ -231,47 +231,136 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 		TotalOperations: 0,
 		Test:            pgtype.Text{},
 		FSSummaries:     nil,
+		Reasons:         nil,
 	}
 	fsSummaries := make([]model.FsTestSummary, 0)
+	var fsNames []string
 	testFiles, _ := os.ReadDir(testDir)
-	for _, testFile := range testFiles {
-		re := regexp.MustCompile("(.+).trace.json")
-		matches := re.FindStringSubmatch(testFile.Name())
-		if len(matches) > 1 {
-			fsName := matches[1]
-			testFileFullPath := filepath.Join(testDir, testFile.Name())
-			contentBytes, err := os.ReadFile(testFileFullPath)
-			if err != nil {
-				return model.TestCase{}, fmt.Errorf("failed to read fs trace file: %w", err)
-			}
-			fsSummary := model.FsTestSummary{
-				0,
-				0,
-				fsName,
-				0,
-				0,
-				pgtype.Interval{Valid: true},
-				pgtype.Text{
-					string(contentBytes), true,
-				},
-			}
-			fsSummaries = append(fsSummaries, fsSummary)
-			continue
-		}
-		if testFile.Name() == "test.json" {
-			contentBytes, err := os.ReadFile(filepath.Join(testDir, testFile.Name()))
-			if err != nil {
-				return model.TestCase{}, fmt.Errorf("failed to read test.json file: %w", err)
-			}
 
-			testCase.Test = pgtype.Text{
-				String: string(contentBytes),
-				Valid:  true,
-			}
+	for _, testFile := range testFiles {
+		if strings.HasSuffix(testFile.Name(), ".trace.json") {
+			fsName := strings.TrimSuffix(testFile.Name(), ".trace.json")
+			fsNames = append(fsNames, fsName)
 		}
 	}
+	if len(fsNames) != 2 {
+		return model.TestCase{}, fmt.Errorf("fail: found unexpected FS traces num in test: %#v", fsNames)
+	}
+
+	// Read FS related files: trace.json, stdout.txt, stderr.txt
+	for _, fsName := range fsNames {
+		fsSummary := model.FsTestSummary{
+			ID: 0,
+			TestCaseID: 0,
+			FsName: fsName,
+			FsSuccessCount: 0,
+			FsFailureCount: 0,
+			FsExecutionTime: pgtype.Interval{Valid: true},
+			FsTrace: pgtype.Text{},
+			FsStdout: pgtype.Text{},
+			FsStderr: pgtype.Text{},
+		}
+		for _, testFile := range testFiles {
+			fileName := testFile.Name()
+			if strings.HasPrefix(fileName, fsName) {
+				fileNameSuffix := strings.TrimPrefix(fileName, fsName + ".")
+				testFileFullPath := filepath.Join(testDir, fileName)
+				contentBytes, err := os.ReadFile(testFileFullPath)
+				if err != nil {
+					return model.TestCase{}, fmt.Errorf("failed to read file %w: %w", testFileFullPath, err)
+				}
+
+				if fileNameSuffix == "trace.json" {
+					fsSummary.FsTrace = pgtype.Text{
+						String: string(contentBytes),
+						Valid: true,
+					}
+				} else if fileNameSuffix == "stdout.txt" {
+					fsSummary.FsStdout = pgtype.Text{
+						String: string(contentBytes),
+						Valid: true,
+					}
+				} else if fileNameSuffix == "stderr.txt" {
+					fsSummary.FsStderr = pgtype.Text{
+						String: string(contentBytes),
+						Valid: true,
+					}
+				} else {
+					return model.TestCase{}, fmt.Errorf("got FS related file name with unexpected prefix %w", fileName)
+				}
+			}
+		}
+
+		fsSummaries = append(fsSummaries, fsSummary)
+	}
+
+	// Read test.json
+	contentBytes, err := os.ReadFile(filepath.Join(testDir, "test.json"))
+	if err != nil {
+		return model.TestCase{}, fmt.Errorf("failed to read test.json file: %w", err)
+	}
+	testCase.Test = pgtype.Text{
+		String: string(contentBytes),
+		Valid:  true,
+	}
+
+	// Read reason.md
+	contentBytes, err = os.ReadFile(filepath.Join(testDir, "reason.md"))
+	if err != nil {
+		return model.TestCase{}, fmt.Errorf("failed to read reason.md file: %w", err)
+	}
+	err = s.parseReasonMd(string(contentBytes), &testCase)
+	if err != nil {
+		return model.TestCase{}, err
+	}
+
 	testCase.FSSummaries = fsSummaries
 	return testCase, nil
+}
+
+func (s *FuzzTraceService) parseReasonMd(fileContent string, testCase *model.TestCase) (error) {
+	reasons := make([]model.TestReason, 0)
+	re := regexp.MustCompile(`Different traces for operation #(\d+):\s*\n\s*` + "```" + `json\s*\n([\s\S]*?)\s*\n\s*` + "```" + `\s*\n`)
+	matches := re.FindAllStringSubmatch(fileContent, -1)
+
+	for _, match := range matches {
+		if len(match) != 3 {
+			continue
+		}
+
+		var opNum int
+		fmt.Sscanf(match[1], "%d", &opNum)
+
+		jsonLines := strings.TrimSpace(match[2])
+		lines := strings.Split(jsonLines, "\n")
+
+		var jsonArray []string
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				jsonArray = append(jsonArray, line)
+			}
+		}
+		jsonData := "[" + strings.Join(jsonArray, ",") + "]"
+
+		reason := model.TestReason{
+			ID: 0,
+			TestCaseID: 0,
+			OpNumber: opNum,
+			Diff: pgtype.Text{
+				String: jsonData,
+				Valid: true,
+			},
+		}
+		reasons = append(reasons, reason)
+	}
+
+	if len(reasons) == 0 {
+		return fmt.Errorf("found 0 reasons")
+	}
+
+	testCase.Reasons = reasons
+	return nil
 }
 
 func (s *FuzzTraceService) extractMetadata(f os.DirEntry, tmpDir string, metadata *dto.Metadata) (int, error) {

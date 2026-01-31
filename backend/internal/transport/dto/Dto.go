@@ -86,6 +86,8 @@ type FsTestSummary struct {
 	FsFailureCount  int
 	FsExecutionTime pgtype.Interval
 	FsTrace         pgtype.Text
+	FsStdout        pgtype.Text
+	FsStderr        pgtype.Text
 }
 
 type ExecutionSearchQuery struct {

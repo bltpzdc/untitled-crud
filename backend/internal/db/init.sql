@@ -32,6 +32,13 @@ CREATE TABLE IF NOT EXISTS test_cases (
     test JSONB
 );
 
+CREATE TABLE IF NOT EXISTS test_reasons (
+    id SERIAL PRIMARY KEY,
+    test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+    op_number INTEGER NOT NULL DEFAULT 0,
+    diff JSONB
+)
+
 CREATE TABLE IF NOT EXISTS fs_test_summaries (
     id SERIAL PRIMARY KEY,
     test_case_id INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
@@ -39,7 +46,9 @@ CREATE TABLE IF NOT EXISTS fs_test_summaries (
     fs_success_count INTEGER NOT NULL DEFAULT 0,
     fs_failure_count INTEGER NOT NULL DEFAULT 0,
     fs_execution_time INTERVAL,
-    fs_trace JSONB
+    fs_trace JSONB,
+    fs_stdout TEXT,
+    fs_stderr TEXT
 );
 
 
