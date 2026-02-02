@@ -21,7 +21,15 @@ CREATE TABLE IF NOT EXISTS op_crashes (
     id SERIAL PRIMARY KEY,
     run_id INTEGER NOT NULL REFERENCES fuzzer_runs(id) ON DELETE CASCADE,
     operation VARCHAR(20) NOT NULL,
-    folder_id TEXT
+    folder_id TEXT,
+    comment TEXT
+);
+
+CREATE TABLE IF NOT EXISTS crash_tags (
+    id SERIAL PRIMARY KEY,
+    crash_id INTEGER NOT NULL REFERENCES op_crashes(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    UNIQUE(crash_id, tag_id)
 );
 
 CREATE TABLE IF NOT EXISTS test_cases (
@@ -39,7 +47,9 @@ CREATE TABLE IF NOT EXISTS fs_test_summaries (
     fs_success_count INTEGER NOT NULL DEFAULT 0,
     fs_failure_count INTEGER NOT NULL DEFAULT 0,
     fs_execution_time INTERVAL,
-    fs_trace JSONB
+    fs_trace JSONB,
+    stdout TEXT,
+    stderr TEXT
 );
 
 

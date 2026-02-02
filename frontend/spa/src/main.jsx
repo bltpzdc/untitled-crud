@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
@@ -13,17 +13,34 @@ import "@fontsource/roboto/600.css";    //semibold
 import "@fontsource/roboto/700.css";
 
 import MainMenu from "./MainMenu.jsx";
-import { theme } from "./Theme.js";
+import { lightTheme, darkTheme } from "./Theme.js";
 
-createRoot(document.getElementById("root")).render(
-  <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <StrictMode>
-      <Box sx={{ display: "flex" }}>
-        {/* NOTE(savikin): put sidemenu inside MainMenu
-         while working around layout bugs */}
-        <MainMenu />
-      </Box>
-    </StrictMode>
-  </ThemeProvider>
-);
+function App() {
+  const [themeMode, setThemeMode] = useState(() => {
+    const saved = localStorage.getItem('theme-mode');
+    return saved === 'dark' ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    // Применяем тему к документу
+    document.documentElement.setAttribute('data-theme', themeMode);
+    localStorage.setItem('theme-mode', themeMode);
+  }, [themeMode]);
+
+  const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
+
+  return (
+    <ThemeProvider theme={currentTheme}>
+      <CssBaseline />
+      <StrictMode>
+        <Box sx={{ display: "flex" }}>
+          {/* NOTE(savikin): put sidemenu inside MainMenu
+           while working around layout bugs */}
+          <MainMenu themeMode={themeMode} setThemeMode={setThemeMode} />
+        </Box>
+      </StrictMode>
+    </ThemeProvider>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);

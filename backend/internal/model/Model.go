@@ -40,6 +40,8 @@ type CrashesGroupedByFailedOperation struct {
 	Operation string     `db:"operation"`
 	// FolderID хранится как строка, чтобы не терять большие значения, не влезающие в BIGINT
 	FolderID  *string    `db:"folder_id"`
+	Comment   *string    `db:"comment"`
+	Tags      []string   `db:"-"`
 	TestCases []TestCase `db:"-"`
 }
 
@@ -60,6 +62,8 @@ type FsTestSummary struct {
 	FsFailureCount  int             `db:"fs_failure_count"`
 	FsExecutionTime pgtype.Interval `db:"fs_execution_time"`
 	FsTrace         pgtype.Text     `db:"fs_trace"`
+	Stdout          pgtype.Text     `db:"-"`
+	Stderr          pgtype.Text     `db:"-"`
 }
 
 type RunSearchPattern struct {

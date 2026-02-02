@@ -65,7 +65,9 @@ type CrashesGroupedByFailedOperation struct {
 	RunID     int
 	Operation string
 	// FolderID как строка, чтобы не упираться в ограничения BIGINT и не терять точность
-	FolderID  *string `json:"folderId,omitempty"`
+	FolderID  *string   `json:"folderId,omitempty"`
+	Comment   *string   `json:"comment,omitempty"`
+	Tags      []string  `json:"tags,omitempty"`
 	TestCases []TestCase
 }
 
@@ -86,6 +88,8 @@ type FsTestSummary struct {
 	FsFailureCount  int
 	FsExecutionTime pgtype.Interval
 	FsTrace         pgtype.Text
+	Stdout          pgtype.Text `json:"stdout,omitempty"`
+	Stderr          pgtype.Text `json:"stderr,omitempty"`
 }
 
 type ExecutionSearchQuery struct {

@@ -74,5 +74,57 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return fmt.Errorf("failed to add folder_id column: %w", err)
 	}
+
+	// Migration: Add comment column to op_crashes
+	_, err = pool.Exec(ctx, `
+		DO $$ 
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'op_crashes' AND column_name = 'comment'
+			) THEN
+				ALTER TABLE op_crashes ADD COLUMN comment TEXT;
+			END IF;
+		END $$;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to add comment column to op_crashes: %w", err)
+	}
+
+	// Migration: Create crash_tags table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS crash_tags (
+			id SERIAL PRIMARY KEY,
+			crash_id INTEGER NOT NULL REFERENCES op_crashes(id) ON DELETE CASCADE,
+			tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+			UNIQUE(crash_id, tag_id)
+		);
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create crash_tags table: %w", err)
+	}
+
+	// Migration: Add stdout and stderr columns to fs_test_summaries
+	_, err = pool.Exec(ctx, `
+		DO $$ 
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'fs_test_summaries' AND column_name = 'stdout'
+			) THEN
+				ALTER TABLE fs_test_summaries ADD COLUMN stdout TEXT;
+			END IF;
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'fs_test_summaries' AND column_name = 'stderr'
+			) THEN
+				ALTER TABLE fs_test_summaries ADD COLUMN stderr TEXT;
+			END IF;
+		END $$;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to add stdout/stderr columns to fs_test_summaries: %w", err)
+	}
+
 	return nil
 }
