@@ -1,9 +1,11 @@
 package transport
 
 import (
+	"fmt"
 	"log/slog"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -174,6 +176,36 @@ func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 	c.File(file)
 }
 
+func (h *FuzzTraceHandler) DownloadBugArchive(c *gin.Context) {
+	crashID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid crash ID"})
+		return
+	}
+	testCaseHash := c.Query("hash")
+	file, err := h.service.GetBugArchive(c.Request.Context(), crashID, testCaseHash)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Удаляем временный файл после отправки
+	defer func() {
+		if err := os.Remove(file); err != nil {
+			slog.Error("Failed to remove temp file", "file", file, "error", err)
+		}
+	}()
+	
+	filename := fmt.Sprintf("bug-%d.zip", crashID)
+	if testCaseHash != "" {
+		filename = fmt.Sprintf("bug-%d-%s.zip", crashID, testCaseHash)
+	}
+	
+	c.Header("Content-Type", "application/zip")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.File(file)
+}
+
 func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
 	tags, err := h.service.GetAllTags(c.Request.Context())
 	if err != nil {
@@ -234,6 +266,56 @@ func (h *FuzzTraceHandler) UpdateRunComment(c *gin.Context) {
 	err = h.service.UpdateRunComment(c.Request.Context(), runID, request.Comment)
 	if err != nil {
 		slog.Error("Failed to update run comment", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *FuzzTraceHandler) UpdateCrashTags(c *gin.Context) {
+	crashID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid crash ID"})
+		return
+	}
+
+	var request struct {
+		Tags []string `json:"tags"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err = h.service.UpdateCrashTags(c.Request.Context(), crashID, request.Tags)
+	if err != nil {
+		slog.Error("Failed to update crash tags", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *FuzzTraceHandler) UpdateCrashComment(c *gin.Context) {
+	crashID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid crash ID"})
+		return
+	}
+
+	var request struct {
+		Comment *string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err = h.service.UpdateCrashComment(c.Request.Context(), crashID, request.Comment)
+	if err != nil {
+		slog.Error("Failed to update crash comment", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -42,6 +42,9 @@ func main() {
 	router.GET("/tags", fuzzTraceHandler.GetAllTags)
 	router.PUT("/runs/:id/tags", fuzzTraceHandler.UpdateRunTags)
 	router.PUT("/runs/:id/comment", fuzzTraceHandler.UpdateRunComment)
+	router.PUT("/bugs/:id/tags", fuzzTraceHandler.UpdateCrashTags)
+	router.PUT("/bugs/:id/comment", fuzzTraceHandler.UpdateCrashComment)
+	router.GET("/bugs/:id/archive", fuzzTraceHandler.DownloadBugArchive)
 	router.DELETE("/runs/:id", fuzzTraceHandler.DeleteRun)
 	router.GET("/runs/search-with-tags", fuzzTraceHandler.GetFuzzerRunsBySearchPatternWithTags)
 

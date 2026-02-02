@@ -175,6 +175,13 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 			return err
 		}
 
+		// Сохраняем теги бага, если они есть
+		if len(opCrash.Tags) > 0 {
+			if err := r.addCrashTags(ctx, opCrash.ID, opCrash.Tags); err != nil {
+				return err
+			}
+		}
+
 		for j := range opCrash.TestCases {
 			testCase := &opCrash.TestCases[j]
 			testCase.CrashID = opCrash.ID
@@ -194,11 +201,21 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 				fsSummary := &testCase.FSSummaries[k]
 				fsSummary.TestCaseID = testCase.ID
 
+				var stdoutValue interface{}
+				var stderrValue interface{}
+				if fsSummary.Stdout.Valid {
+					stdoutValue = fsSummary.Stdout.String
+				}
+				if fsSummary.Stderr.Valid {
+					stderrValue = fsSummary.Stderr.String
+				}
+				
 				err := r.db.QueryRow(ctx,
-					`INSERT INTO fs_test_summaries (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace) 
-                     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+					`INSERT INTO fs_test_summaries (test_case_id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace, stdout, stderr) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 					fsSummary.TestCaseID, fsSummary.FsName, fsSummary.FsSuccessCount,
 					fsSummary.FsFailureCount, fsSummary.FsExecutionTime, fsSummary.FsTrace,
+					stdoutValue, stderrValue,
 				).Scan(&fsSummary.ID)
 				if err != nil {
 					return err
@@ -212,7 +229,7 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 
 func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([]model.CrashesGroupedByFailedOperation, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, operation, folder_id FROM op_crashes WHERE run_id = $1",
+		"SELECT id, operation, folder_id, comment FROM op_crashes WHERE run_id = $1",
 		runID,
 	)
 	if err != nil {
@@ -223,9 +240,20 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
 	var opCrashes []model.CrashesGroupedByFailedOperation
 	for rows.Next() {
 		var opCrash model.CrashesGroupedByFailedOperation
-		if err := rows.Scan(&opCrash.ID, &opCrash.Operation, &opCrash.FolderID); err != nil {
+		var comment pgtype.Text
+		if err := rows.Scan(&opCrash.ID, &opCrash.Operation, &opCrash.FolderID, &comment); err != nil {
 			return nil, err
 		}
+
+		if comment.Valid {
+			opCrash.Comment = &comment.String
+		}
+
+		tags, err := r.getCrashTags(ctx, opCrash.ID)
+		if err != nil {
+			return nil, err
+		}
+		opCrash.Tags = tags
 
 		testCases, err := r.getOpCrashTestCases(ctx, opCrash.ID)
 		if err != nil {
@@ -274,7 +302,7 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
 
 func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCaseID int) ([]model.FsTestSummary, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace FROM fs_test_summaries WHERE test_case_id = $1",
+		"SELECT id, fs_name, fs_success_count, fs_failure_count, fs_execution_time, fs_trace, stdout, stderr FROM fs_test_summaries WHERE test_case_id = $1",
 		testCaseID,
 	)
 	if err != nil {
@@ -285,10 +313,31 @@ func (r *FuzzTraceRepository) getTestCaseFsSummaries(ctx context.Context, testCa
 	var fsSummaries []model.FsTestSummary
 	for rows.Next() {
 		var fsSummary model.FsTestSummary
+		var stdoutStr, stderrStr *string
 		if err := rows.Scan(&fsSummary.ID, &fsSummary.FsName, &fsSummary.FsSuccessCount,
-			&fsSummary.FsFailureCount, &fsSummary.FsExecutionTime, &fsSummary.FsTrace); err != nil {
+			&fsSummary.FsFailureCount, &fsSummary.FsExecutionTime, &fsSummary.FsTrace,
+			&stdoutStr, &stderrStr); err != nil {
 			return nil, err
 		}
+		
+		if stdoutStr != nil {
+			fsSummary.Stdout = pgtype.Text{
+				String: *stdoutStr,
+				Valid:  true,
+			}
+		} else {
+			fsSummary.Stdout = pgtype.Text{Valid: false}
+		}
+		
+		if stderrStr != nil {
+			fsSummary.Stderr = pgtype.Text{
+				String: *stderrStr,
+				Valid:  true,
+			}
+		} else {
+			fsSummary.Stderr = pgtype.Text{Valid: false}
+		}
+		
 		fsSummaries = append(fsSummaries, fsSummary)
 	}
 
@@ -386,4 +435,100 @@ func (r *FuzzTraceRepository) DeleteRun(ctx context.Context, runID int) error {
 		runID,
 	)
 	return err
+}
+
+func (r *FuzzTraceRepository) getCrashTags(ctx context.Context, crashID int) ([]string, error) {
+	rows, err := r.db.Query(ctx,
+		"SELECT t.name FROM tags t JOIN crash_tags ct ON t.id = ct.tag_id WHERE ct.crash_id = $1",
+		crashID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tags []string
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+
+	return tags, nil
+}
+
+func (r *FuzzTraceRepository) addCrashTags(ctx context.Context, crashID int, tagNames []string) error {
+	currentTags, err := r.getCrashTags(ctx, crashID)
+	if err != nil {
+		return err
+	}
+
+	currentTagSet := make(map[string]bool)
+	for _, tag := range currentTags {
+		currentTagSet[tag] = true
+	}
+	newTagSet := make(map[string]bool)
+	for _, tag := range tagNames {
+		newTagSet[tag] = true
+	}
+
+	// add unexisting tags
+	for _, tagName := range tagNames {
+		if !currentTagSet[tagName] {
+			var tagID int
+			err := r.db.QueryRow(ctx,
+				"INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id",
+				tagName,
+			).Scan(&tagID)
+			if err != nil {
+				return err
+			}
+
+			_, err = r.db.Exec(ctx,
+				"INSERT INTO crash_tags (crash_id, tag_id) VALUES ($1, $2) ON CONFLICT (crash_id, tag_id) DO NOTHING",
+				crashID, tagID,
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// remove tags that are not in new list
+	for _, tag := range currentTags {
+		if !newTagSet[tag] {
+			_, err = r.db.Exec(ctx,
+				"DELETE FROM crash_tags WHERE crash_id = $1 AND tag_id = (SELECT id FROM tags WHERE name = $2)",
+				crashID, tag,
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *FuzzTraceRepository) UpdateCrashTags(ctx context.Context, crashID int, tagNames []string) error {
+	return r.addCrashTags(ctx, crashID, tagNames)
+}
+
+func (r *FuzzTraceRepository) UpdateCrashComment(ctx context.Context, crashID int, comment *string) error {
+	_, err := r.db.Exec(ctx,
+		"UPDATE op_crashes SET comment = $1 WHERE id = $2",
+		comment, crashID,
+	)
+	return err
+}
+
+func (r *FuzzTraceRepository) GetCrashRunID(ctx context.Context, crashID int) (int, error) {
+	var runID int
+	err := r.db.QueryRow(ctx,
+		"SELECT run_id FROM op_crashes WHERE id = $1",
+		crashID,
+	).Scan(&runID)
+	return runID, err
 }

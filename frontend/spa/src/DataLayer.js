@@ -173,7 +173,42 @@ class DiffuzzerStorage {
           x.text = bugDisplayHash 
             ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
             : `Баг ${x.ID}${operationText}`;
-          x.displayHash = bugDisplayHash; 
+          x.displayHash = bugDisplayHash;
+          
+          // Обработка тегов бага (из поля tags или metadata.tags)
+          let bugTags = [];
+          if (Array.isArray(x.tags)) {
+            bugTags = x.tags;
+          } else if (x.metadata && Array.isArray(x.metadata.tags)) {
+            bugTags = x.metadata.tags;
+          }
+          bugTags = bugTags
+            .filter(tag => tag != null && tag !== '')
+            .map(tag => {
+              if (typeof tag === 'string') {
+                return tag.trim();
+              }
+              if (tag && typeof tag === 'object') {
+                const tagName = tag.Name || tag.name;
+                if (tagName && typeof tagName === 'string') {
+                  return tagName.trim();
+                }
+                return null;
+              }
+              return String(tag).trim();
+            })
+            .filter(tag => tag != null && tag.length > 0);
+          x.tags = bugTags;
+          
+          // Обработка комментария бага (из поля comment или metadata.comment)
+          if (x.comment !== undefined && x.comment !== null) {
+            x.comment = x.comment;
+          } else if (x.metadata && x.metadata.comment !== null && x.metadata.comment !== undefined) {
+            x.comment = x.metadata.comment;
+          } else {
+            x.comment = "";
+          }
+          
           return x;
         })
 
@@ -301,6 +336,33 @@ class DiffuzzerStorage {
           ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
           : `Баг ${x.ID}${operationText}`;
         x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
+        
+        // Обработка тегов бага
+        const bugTags = x.metadata && Array.isArray(x.metadata.tags) 
+          ? x.metadata.tags
+              .filter(tag => tag != null && tag !== '')
+              .map(tag => {
+                if (typeof tag === 'string') {
+                  return tag.trim();
+                }
+                if (tag && typeof tag === 'object') {
+                  const tagName = tag.Name || tag.name;
+                  if (tagName && typeof tagName === 'string') {
+                    return tagName.trim();
+                  }
+                  return null;
+                }
+                return String(tag).trim();
+              })
+              .filter(tag => tag != null && tag.length > 0)
+          : [];
+        x.tags = bugTags;
+        
+        // Обработка комментария бага
+        x.comment = (x.metadata && x.metadata.comment !== null && x.metadata.comment !== undefined)
+          ? x.metadata.comment
+          : "";
+        
         return x;
       })
 
@@ -502,6 +564,75 @@ class DiffuzzerStorage {
     }
   }
 
+  async update_bug_tags(bugId, tags) {
+    try {
+      const url = `/backend/bugs/${bugId}/tags`;
+      console.log("Updating tags for bug", bugId, "with tags", tags, "URL:", url);
+      
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tags }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error response:", errorText, "Status:", res.status);
+        throw new Error(`Failed to update bug tags: ${res.status} - ${errorText}`);
+      }
+
+      const result = await res.json();
+      console.log("Bug tags updated successfully:", result);
+      return result;
+    } catch (error) {
+      console.error("Error in update_bug_tags:", error);
+      throw error;
+    }
+  }
+
+  async update_bug_comment(bugId, comment) {
+    const response = await fetch(`/backend/bugs/${bugId}/comment`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ comment: comment || null }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update bug comment: ${errorText}`);
+    }
+  }
+
+  async download_bug_archive(bugId, testCaseHash) {
+    try {
+      const url = `/backend/bugs/${bugId}/archive${testCaseHash ? `?hash=${encodeURIComponent(testCaseHash)}` : ''}`;
+      const response = await fetch(url, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to download bug archive: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `bug-${bugId}-${testCaseHash || 'archive'}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error in download_bug_archive:", error);
+      throw error;
+    }
+  }
 
   async get_runs_by_search_with_tags(fromDate = null, toDate = null, tags = []) {
     this.runsById = {};
@@ -565,6 +696,33 @@ class DiffuzzerStorage {
           ? `[${bugDisplayHash}] Баг ${x.ID}${operationText}` 
           : `Баг ${x.ID}${operationText}`;
         x.displayHash = bugDisplayHash; // Сохраняем хэш бага для использования в UI
+        
+        // Обработка тегов бага
+        const bugTags = x.metadata && Array.isArray(x.metadata.tags) 
+          ? x.metadata.tags
+              .filter(tag => tag != null && tag !== '')
+              .map(tag => {
+                if (typeof tag === 'string') {
+                  return tag.trim();
+                }
+                if (tag && typeof tag === 'object') {
+                  const tagName = tag.Name || tag.name;
+                  if (tagName && typeof tagName === 'string') {
+                    return tagName.trim();
+                  }
+                  return null;
+                }
+                return String(tag).trim();
+              })
+              .filter(tag => tag != null && tag.length > 0)
+          : [];
+        x.tags = bugTags;
+        
+        // Обработка комментария бага
+        x.comment = (x.metadata && x.metadata.comment !== null && x.metadata.comment !== undefined)
+          ? x.metadata.comment
+          : "";
+        
         return x;
       })
 

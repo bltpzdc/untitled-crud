@@ -146,14 +146,26 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
       });
     }
 
-    // Фильтр по тегам запуска
+    // Фильтр по тегам (общий для run и bug)
     if (tags && tags.length > 0) {
       const tagSet = new Set(tags.map((t) => String(t).toLowerCase().trim()));
       filtered = filtered.filter((err) => {
+        // Проверяем теги бага
+        if (err.bug && err.bug.tags && Array.isArray(err.bug.tags)) {
+          const errBugTags = err.bug.tags.map((t) => String(t).toLowerCase().trim());
+          if (errBugTags.some((tag) => tagSet.has(tag))) {
+            return true;
+          }
+        }
+        // Проверяем теги run
         const run = runs.find((r) => r.id === err.runId);
-        if (!run || !run.tags || !Array.isArray(run.tags)) return false;
-        const runTags = run.tags.map((t) => String(t).toLowerCase().trim());
-        return runTags.some((tag) => tagSet.has(tag));
+        if (run && run.tags && Array.isArray(run.tags)) {
+          const runTags = run.tags.map((t) => String(t).toLowerCase().trim());
+          if (runTags.some((tag) => tagSet.has(tag))) {
+            return true;
+          }
+        }
+        return false;
       });
     }
 
@@ -290,6 +302,37 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
       setFilteredErrors(filteredErrorsNew);
     };
     
+    const handleBugUpdated = async (event) => {
+      const { bugId, tags, comment } = event.detail || {};
+      if (!bugId) return;
+      
+      console.log("SideMenuContent: Bug updated event received, updating bug", bugId);
+      
+      const data = await datalayer.get_runs();
+      setAllRuns(data);
+      const allErrs = collectAllErrors(data);
+      setAllErrors(allErrs);
+
+      const operationsSet = new Set();
+      data.forEach(run => {
+        if (run.bugs && Array.isArray(run.bugs)) {
+          run.bugs.forEach(bug => {
+            const operation = bug.Operation || bug.operation;
+            if (operation && String(operation).trim()) {
+              operationsSet.add(String(operation).trim());
+            }
+          });
+        }
+      });
+      const operationsList = Array.from(operationsSet).sort();
+      setAvailableOperations(operationsList);
+
+      const filteredRunsNew = filterRuns(data, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes);
+      setFilteredRuns(filteredRunsNew);
+      const filteredErrorsNew = filterErrors(allErrs, fromDate || null, toDate || null, selectedTags, selectedOperations, selectedFsTypes, data);
+      setFilteredErrors(filteredErrorsNew);
+    };
+    
     const handleRunsReload = async () => {
       console.log("SideMenuContent: Runs reload event received, reloading runs.");
       const data = await datalayer.get_runs();
@@ -320,6 +363,7 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
     window.addEventListener('tagsUpdated', handleTagsUpdate);
     window.addEventListener('runDeleted', handleRunDeleted);
     window.addEventListener('runUpdated', handleRunUpdated);
+    window.addEventListener('bugUpdated', handleBugUpdated);
     window.addEventListener('runsReload', handleRunsReload);
     
     get_runs();
@@ -329,6 +373,7 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
       window.removeEventListener('tagsUpdated', handleTagsUpdate);
       window.removeEventListener('runDeleted', handleRunDeleted);
       window.removeEventListener('runUpdated', handleRunUpdated);
+      window.removeEventListener('bugUpdated', handleBugUpdated);
       window.removeEventListener('runsReload', handleRunsReload);
     };
   }, []);

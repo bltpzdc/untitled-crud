@@ -5,3 +5,74 @@
   --diff-code-insert-background-color: #e6ffed;
   --diff-code-delete-background-color: #ffeef0;
 }
+
+[data-theme="dark"] .my-diff {
+  --diff-background-color: #1E1E1E;
+  --diff-text-color: #E0E0E0;
+
+  --diff-code-insert-background-color: #1e4620;
+  --diff-code-delete-background-color: #4a1f1f;
+}
+
+/* Стили для react-diff-view */
+.my-diff {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+.my-diff .diff-view {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+.my-diff .diff-view table {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+/* Базовые стили для ячеек, но не переопределяем фоны для добавленных/удаленных строк */
+.my-diff .diff-view td:not(.diff-line-new):not(.diff-line-old),
+.my-diff .diff-view th:not(.diff-line-new):not(.diff-line-old) {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+  border-color: var(--border-neutral-primary) !important;
+}
+
+.my-diff .diff-view .diff-line {
+  color: var(--text-neutral-primary) !important;
+}
+
+.my-diff .diff-view .diff-line-number {
+  background-color: var(--surface-neutral-secondary) !important;
+  color: var(--text-neutral-secondary) !important;
+  border-color: var(--border-neutral-primary) !important;
+}
+
+/* Стили для добавленных строк (зеленый фон) */
+.my-diff .diff-view .diff-line-new {
+  background-color: #e6ffed !important;
+}
+
+[data-theme="dark"] .my-diff .diff-view .diff-line-new {
+  background-color: rgba(102, 187, 106, 0.2) !important;
+}
+
+/* Стили для удаленных строк (красный фон) */
+.my-diff .diff-view .diff-line-old {
+  background-color: #ffeef0 !important;
+}
+
+[data-theme="dark"] .my-diff .diff-view .diff-line-old {
+  background-color: rgba(239, 83, 80, 0.2) !important;
+}
+
+/* Цвет текста для добавленных и удаленных строк */
+.my-diff .diff-view .diff-line-new,
+.my-diff .diff-view .diff-line-new * {
+  color: var(--text-neutral-primary) !important;
+}
+
+.my-diff .diff-view .diff-line-old,
+.my-diff .diff-view .diff-line-old * {
+  color: var(--text-neutral-primary) !important;
+}

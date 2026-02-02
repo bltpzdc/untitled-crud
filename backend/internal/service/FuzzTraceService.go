@@ -204,11 +204,72 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 		}
 	}
 
+	// Собираем все уникальные файловые системы из всех TestCases
+	fsSet := make(map[string]bool)
+	for _, crash := range crashesGroupedByFailedOperations {
+		for _, testCase := range crash.TestCases {
+			for _, fsSummary := range testCase.FSSummaries {
+				if fsSummary.FsName != "" {
+					fsSet[fsSummary.FsName] = true
+				}
+			}
+		}
+	}
+	
+	// Добавляем файловые системы к тегам run
+	runTags := make([]string, len(metadata.Tags))
+	copy(runTags, metadata.Tags)
+	for fsName := range fsSet {
+		// Проверяем, нет ли уже такого тега
+		found := false
+		for _, tag := range runTags {
+			if tag == fsName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			runTags = append(runTags, fsName)
+		}
+	}
+	
+	// Добавляем файловые системы к тегам каждого бага
+	for i := range crashesGroupedByFailedOperations {
+		crash := &crashesGroupedByFailedOperations[i]
+		crashFsSet := make(map[string]bool)
+		for _, testCase := range crash.TestCases {
+			for _, fsSummary := range testCase.FSSummaries {
+				if fsSummary.FsName != "" {
+					crashFsSet[fsSummary.FsName] = true
+				}
+			}
+		}
+		
+		// Инициализируем Tags, если он nil
+		if crash.Tags == nil {
+			crash.Tags = make([]string, 0)
+		}
+		
+		// Добавляем файловые системы к тегам бага
+		for fsName := range crashFsSet {
+			found := false
+			for _, tag := range crash.Tags {
+				if tag == fsName {
+					found = true
+					break
+				}
+			}
+			if !found {
+				crash.Tags = append(crash.Tags, fsName)
+			}
+		}
+	}
+
 	runModel := model.FuzzerRun{
 		ID:                              0,
 		Timestamp:                       metadata.Timestamp,
 		FailureCount:                    metadata.FailureCount,
-		Tags:                            metadata.Tags,
+		Tags:                            runTags,
 		CrashesGroupedByFailedOperation: crashesGroupedByFailedOperations,
 	}
 
@@ -233,7 +294,10 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 		FSSummaries:     nil,
 	}
 	fsSummaries := make([]model.FsTestSummary, 0)
+	fsSummaryMap := make(map[string]*model.FsTestSummary)
 	testFiles, _ := os.ReadDir(testDir)
+	
+	// Сначала обрабатываем trace.json файлы для создания FSSummaries
 	for _, testFile := range testFiles {
 		re := regexp.MustCompile("(.+).trace.json")
 		matches := re.FindStringSubmatch(testFile.Name())
@@ -244,7 +308,7 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 			if err != nil {
 				return model.TestCase{}, fmt.Errorf("failed to read fs trace file: %w", err)
 			}
-			fsSummary := model.FsTestSummary{
+			fsSummary := &model.FsTestSummary{
 				0,
 				0,
 				fsName,
@@ -254,8 +318,10 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 				pgtype.Text{
 					string(contentBytes), true,
 				},
+				pgtype.Text{Valid: false},
+				pgtype.Text{Valid: false},
 			}
-			fsSummaries = append(fsSummaries, fsSummary)
+			fsSummaryMap[fsName] = fsSummary
 			continue
 		}
 		if testFile.Name() == "test.json" {
@@ -270,6 +336,51 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 			}
 		}
 	}
+	
+	// Теперь обрабатываем stdout.txt и stderr.txt файлы
+	for _, testFile := range testFiles {
+		// Обработка stdout.txt
+		reStdout := regexp.MustCompile("(.+).stdout.txt")
+		matchesStdout := reStdout.FindStringSubmatch(testFile.Name())
+		if len(matchesStdout) > 1 {
+			fsName := matchesStdout[1]
+			if fsSummary, exists := fsSummaryMap[fsName]; exists {
+				testFileFullPath := filepath.Join(testDir, testFile.Name())
+				contentBytes, err := os.ReadFile(testFileFullPath)
+				if err == nil {
+					fsSummary.Stdout = pgtype.Text{
+						String: string(contentBytes),
+						Valid:  true,
+					}
+				}
+			}
+			continue
+		}
+		
+		// Обработка stderr.txt
+		reStderr := regexp.MustCompile("(.+).stderr.txt")
+		matchesStderr := reStderr.FindStringSubmatch(testFile.Name())
+		if len(matchesStderr) > 1 {
+			fsName := matchesStderr[1]
+			if fsSummary, exists := fsSummaryMap[fsName]; exists {
+				testFileFullPath := filepath.Join(testDir, testFile.Name())
+				contentBytes, err := os.ReadFile(testFileFullPath)
+				if err == nil {
+					fsSummary.Stderr = pgtype.Text{
+						String: string(contentBytes),
+						Valid:  true,
+					}
+				}
+			}
+			continue
+		}
+	}
+	
+	// Преобразуем map в slice
+	for _, fsSummary := range fsSummaryMap {
+		fsSummaries = append(fsSummaries, *fsSummary)
+	}
+	
 	testCase.FSSummaries = fsSummaries
 	return testCase, nil
 }
@@ -382,6 +493,109 @@ func (s *FuzzTraceService) GetRunArchive(id int) (string, error) {
 	return archivePath, err
 }
 
+func (s *FuzzTraceService) GetBugArchive(ctx context.Context, crashID int, testCaseHash string) (string, error) {
+	runID, err := s.fuzzTraceRepo.GetCrashRunID(ctx, crashID)
+	if err != nil {
+		return "", fmt.Errorf("bug with id %d not found: %w", crashID, err)
+	}
+	
+	// Получаем информацию о баге
+	run, err := s.fuzzTraceRepo.GetRun(ctx, runID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get run: %w", err)
+	}
+	
+	var crash *model.CrashesGroupedByFailedOperation
+	for i := range run.CrashesGroupedByFailedOperation {
+		if run.CrashesGroupedByFailedOperation[i].ID == crashID {
+			crash = &run.CrashesGroupedByFailedOperation[i]
+			break
+		}
+	}
+	
+	if crash == nil {
+		return "", fmt.Errorf("bug with id %d not found in run", crashID)
+	}
+	
+	// Строим имя папки бага
+	// Формат: trace-Operation-FolderID
+	var bugFolderName string
+	if crash.FolderID != nil && *crash.FolderID != "" {
+		bugFolderName = fmt.Sprintf("trace-%s-%s", crash.Operation, *crash.FolderID)
+	} else {
+		// Если folderID нет, используем ID бага
+		bugFolderName = fmt.Sprintf("trace-%s-%d", crash.Operation, crashID)
+	}
+	
+	// Открываем исходный архив
+	archivePath := s.calculateArchivePath(runID)
+	archive, err := zip.OpenReader(archivePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open archive: %w", err)
+	}
+	defer archive.Close()
+	
+	// Создаем временный файл для нового архива
+	tempFile, err := os.CreateTemp("", fmt.Sprintf("bug-%d-*.zip", crashID))
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer tempFile.Close()
+	
+	// Создаем новый архив
+	zipWriter := zip.NewWriter(tempFile)
+	defer zipWriter.Close()
+	
+	// Если указан hash, копируем только папку с этим hash, иначе всю папку бага
+	bugFolderPrefix := fmt.Sprintf("crashes/%s/", bugFolderName)
+	var targetPrefix string
+	if testCaseHash != "" {
+		// Ищем конкретный hash в папке бага
+		targetPrefix = fmt.Sprintf("%s%s/", bugFolderPrefix, testCaseHash)
+	} else {
+		targetPrefix = bugFolderPrefix
+	}
+	
+	found := false
+	for _, f := range archive.File {
+		if strings.HasPrefix(f.Name, targetPrefix) {
+			found = true
+			// Копируем файл в новый архив
+			rc, err := f.Open()
+			if err != nil {
+				return "", fmt.Errorf("failed to open file in archive: %w", err)
+			}
+			
+			// Сохраняем относительный путь от папки crashes
+			newName := strings.TrimPrefix(f.Name, "crashes/")
+			w, err := zipWriter.Create(newName)
+			if err != nil {
+				rc.Close()
+				return "", fmt.Errorf("failed to create file in new archive: %w", err)
+			}
+			
+			_, err = io.Copy(w, rc)
+			rc.Close()
+			if err != nil {
+				return "", fmt.Errorf("failed to copy file: %w", err)
+			}
+		}
+	}
+	
+	if !found {
+		if testCaseHash != "" {
+			return "", fmt.Errorf("test case with hash %s not found in bug folder %s", testCaseHash, bugFolderName)
+		}
+		return "", fmt.Errorf("bug folder %s not found in archive", bugFolderName)
+	}
+	
+	// Закрываем writer, чтобы записать данные
+	zipWriter.Close()
+	tempFile.Close()
+	
+	return tempFile.Name(), nil
+}
+
 func (s *FuzzTraceService) GetAllTags(ctx context.Context) ([]model.Tag, error) {
 	tags, err := s.fuzzTraceRepo.GetAllTags(ctx)
 	if err != nil {
@@ -410,6 +624,22 @@ func (s *FuzzTraceService) UpdateRunComment(ctx context.Context, runID int, comm
 		return fmt.Errorf("run with id %d not found", runID)
 	}
 	return s.fuzzTraceRepo.UpdateRunComment(ctx, runID, comment)
+}
+
+func (s *FuzzTraceService) UpdateCrashTags(ctx context.Context, crashID int, tagNames []string) error {
+	if crashID <= 0 {
+		return fmt.Errorf("invalid crash ID: %d", crashID)
+	}
+
+	return s.fuzzTraceRepo.UpdateCrashTags(ctx, crashID, tagNames)
+}
+
+func (s *FuzzTraceService) UpdateCrashComment(ctx context.Context, crashID int, comment *string) error {
+	if crashID <= 0 {
+		return fmt.Errorf("invalid crash ID: %d", crashID)
+	}
+
+	return s.fuzzTraceRepo.UpdateCrashComment(ctx, crashID, comment)
 }
 
 func (s *FuzzTraceService) DeleteRun(ctx context.Context, runID int) error {

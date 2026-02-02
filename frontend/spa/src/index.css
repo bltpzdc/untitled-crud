@@ -130,12 +130,45 @@ button:focus-visible {
 
   --chip-info-default: #C6D9F1;
   --chip-info-hover: #B0C9E5;
+  
+  --text-link-primary: #206CC9;
+  --text-success: #2e7d32;
+  --text-error: #d32f2f;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  color: #E0E0E0;
+  background-color: #121212;
+
+  --surface-neutral-primary: #1E1E1E;
+  --surface-neutral-secondary: #2D2D2D;
+
+  --accent-primary-default: #64B5F6;
+  --accent-primary-hover: #90CAF9;
+
+  --border-neutral-primary: #3A3A3A;
+  --border-neutral-secondary: #424242;
+
+  --border-accent-default: #64B5F6;
+
+  --text-neutral-primary: #E0E0E0;
+  --text-neutral-secondary: #B0B0B0;
+  --text-neutral-tertiary: #808080;
+
+  --chip-info-default: #2C3E50;
+  --chip-info-hover: #34495E;
+  
+  --text-link-primary: #64B5F6;
+  --text-success: #66bb6a;
+  --text-error: #ef5350;
 }
 
 .MuiAppBar-root {
   box-shadow: none !important;
   background-color: var(--surface-neutral-primary) !important;
   border-bottom: 1px solid var(--border-neutral-primary);
+  color: var(--text-neutral-primary) !important;
 }
 
 .MuiTabs-root {
@@ -183,12 +216,36 @@ button:focus-visible {
 .MuiDrawer-paper {
   background-color: var(--surface-neutral-primary) !important;
   border-right: 1px solid var(--border-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+/* Toolbar стили */
+.MuiToolbar-root {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+/* Dialog стили */
+.MuiDialog-paper {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
+}
+
+.MuiDialogTitle-root {
+  color: var(--text-neutral-primary) !important;
+  border-bottom: 1px solid var(--border-neutral-primary) !important;
+}
+
+.MuiDialogContent-root {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
 }
 
 /* Accordion стили */
 .MuiAccordion-root {
   background-color: var(--surface-neutral-primary) !important;
   box-shadow: none !important;
+  color: var(--text-neutral-primary) !important;
 }
 
 .MuiAccordion-root:before {
@@ -242,6 +299,7 @@ button:focus-visible {
   font-weight: 500;
   border-radius: 4px;
   padding: 8px 16px;
+  color: var(--text-neutral-primary) !important;
 }
 
 .MuiButton-contained {
@@ -266,6 +324,11 @@ button:focus-visible {
 /* TextField стили */
 .MuiTextField-root {
   margin-bottom: 0;
+}
+
+.MuiTextField-root .MuiInputBase-root {
+  background-color: var(--surface-neutral-primary) !important;
+  color: var(--text-neutral-primary) !important;
 }
 
 /* Autocomplete стили */

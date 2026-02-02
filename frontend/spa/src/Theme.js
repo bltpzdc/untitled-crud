@@ -1,6 +1,9 @@
 import { createTheme } from "@mui/material/styles";
 
-export const theme = createTheme({
+const getTheme = (mode) => createTheme({
+  palette: {
+    mode: mode,
+  },
   typography: {
     fieldHeader: {
       fontSize: 16,
@@ -66,3 +69,7 @@ export const theme = createTheme({
     },
   },
 });
+
+export const lightTheme = getTheme('light');
+export const darkTheme = getTheme('dark');
+export const theme = lightTheme; // для обратной совместимости
