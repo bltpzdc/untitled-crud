@@ -29,25 +29,75 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
   const [isFiltered, setIsFiltered] = React.useState(false);
 
   // Вспомогательная функция: собрать все ошибки из всех испытаний
+  // Собираем TestCases из багов, а не сами баги
   const collectAllErrors = React.useCallback((runs) => {
     const errors = [];
+    const seenKeys = new Set();
     runs.forEach((run) => {
       if (run.bugs && Array.isArray(run.bugs)) {
-        run.bugs.forEach((bug) => {
+        const bugsCount = run.bugs.length;
+        let addedCount = 0;
+        run.bugs.forEach((bug, bugIndex) => {
           const operation = bug.Operation || bug.operation || "";
           const opKey = operation.trim() || "Без операции";
-          const bugId = bug.ID || bug.id;
-          const groupKey = `${run.id}-${bugId}-${opKey}`;
-          errors.push({
-            key: groupKey,
-            runId: run.id,
-            runText: run.text,
-            operation: opKey,
-            bug,
-          });
+          const bugId = bug.ID || bug.id || bug.folderId || bug.FolderID || `bug-${bugIndex}`;
+          
+          // Получаем список TestCases из бага
+          const testCases = Array.isArray(bug.TestCases) ? bug.TestCases : [];
+          
+          if (testCases.length === 0) {
+            // Если нет TestCases, все равно добавляем баг как одну запись
+            const groupKey = `${run.id}-${bugId}-${opKey}-${bugIndex}-no-tc`;
+            let uniqueKey = groupKey;
+            let counter = 0;
+            while (seenKeys.has(uniqueKey)) {
+              counter++;
+              uniqueKey = `${groupKey}-${counter}`;
+            }
+            seenKeys.add(uniqueKey);
+            
+            errors.push({
+              key: uniqueKey,
+              runId: run.id,
+              runText: run.text,
+              operation: opKey,
+              bug,
+            });
+            addedCount++;
+          } else {
+            // Для каждого TestCase создаем отдельную запись
+            testCases.forEach((testCase, tcIndex) => {
+              const hash = testCase.Hash || testCase.hash || "";
+              const hashPart = hash ? hash.substring(0, 8) : `tc-${tcIndex}`;
+              const groupKey = `${run.id}-${bugId}-${opKey}-${hashPart}-${tcIndex}`;
+              
+              // Убеждаемся, что ключ уникален
+              let uniqueKey = groupKey;
+              let counter = 0;
+              while (seenKeys.has(uniqueKey)) {
+                counter++;
+                uniqueKey = `${groupKey}-${counter}`;
+              }
+              seenKeys.add(uniqueKey);
+              
+              errors.push({
+                key: uniqueKey,
+                runId: run.id,
+                runText: run.text,
+                operation: opKey,
+                bug,
+                testCase,
+              });
+              addedCount++;
+            });
+          }
         });
+        console.log(`collectAllErrors: испытание ${run.id} (${run.text}): ${bugsCount} багов, добавлено ${addedCount} TestCases`);
+      } else {
+        console.log(`collectAllErrors: испытание ${run.id} (${run.text}): нет багов или bugs не массив`);
       }
     });
+    console.log(`collectAllErrors: итого собрано ${errors.length} TestCases из ${runs.length} испытаний`);
     return errors;
   }, []);
 
@@ -116,9 +166,11 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
 
   const filterErrors = React.useCallback((errors, from, to, tags, operations, fsTypes, runs) => {
     let filtered = [...errors];
+    const initialCount = filtered.length;
 
     // Фильтр по дате запуска
     if (from || to) {
+      const beforeDateFilter = filtered.length;
       filtered = filtered.filter((err) => {
         const run = runs.find((r) => r.id === err.runId);
         if (!run || !run.datetime) return false;
@@ -144,10 +196,12 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
         
         return true;
       });
+      console.log(`filterErrors: после фильтра по дате: ${beforeDateFilter} -> ${filtered.length}`);
     }
 
     // Фильтр по тегам (общий для run и bug)
     if (tags && tags.length > 0) {
+      const beforeTagFilter = filtered.length;
       const tagSet = new Set(tags.map((t) => String(t).toLowerCase().trim()));
       filtered = filtered.filter((err) => {
         // Проверяем теги бага
@@ -167,10 +221,12 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
         }
         return false;
       });
+      console.log(`filterErrors: после фильтра по тегам: ${beforeTagFilter} -> ${filtered.length}`);
     }
 
     // Фильтр по файловым системам запуска
     if (fsTypes && fsTypes.length > 0) {
+      const beforeFsFilter = filtered.length;
       const fsSet = new Set(fsTypes.map(fs => String(fs).toLowerCase().trim()));
       filtered = filtered.filter((err) => {
         const run = runs.find((r) => r.id === err.runId);
@@ -178,10 +234,12 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
         const runFs = run.fstype.map(fs => String(fs).toLowerCase().trim());
         return runFs.some(fs => fsSet.has(fs));
       });
+      console.log(`filterErrors: после фильтра по FS: ${beforeFsFilter} -> ${filtered.length}`);
     }
 
     // Фильтр по типу операции
     if (operations && operations.length > 0) {
+      const beforeOpFilter = filtered.length;
       const operationSet = new Set(
         operations.map((op) => String(op).toLowerCase().trim())
       );
@@ -189,8 +247,10 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
         const op = String(err.operation || "").toLowerCase().trim();
         return op && operationSet.has(op);
       });
+      console.log(`filterErrors: после фильтра по операциям: ${beforeOpFilter} -> ${filtered.length}`);
     }
 
+    console.log(`filterErrors: итого: ${initialCount} -> ${filtered.length} багов`);
     return filtered;
   }, []);
 
@@ -436,7 +496,11 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
               <ListItem key={item.key || index} sx={{ padding: 0 }}>
                 <ListItemButton
                   onClick={() => {
-                    const bugWithDatatype = { ...(item.bug || {}), datatype: "bug" };
+                    const bugWithDatatype = { 
+                      ...(item.bug || {}), 
+                      datatype: "bug",
+                      selectedTestCase: item.testCase || null
+                    };
                     callback(bugWithDatatype);
                   }}
                   sx={{
@@ -496,6 +560,6 @@ export default function SideMenuContent({ callback, mode = "runs" }) {
           );
         })
       )}
-    </List>
+        </List>
   );
 }

@@ -126,5 +126,43 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to add stdout/stderr columns to fs_test_summaries: %w", err)
 	}
 
+	// Migration: Add reason column to test_cases
+	_, err = pool.Exec(ctx, `
+		DO $$ 
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'test_cases' AND column_name = 'reason'
+			) THEN
+				ALTER TABLE test_cases ADD COLUMN reason TEXT;
+			END IF;
+		END $$;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to add reason column to test_cases: %w", err)
+	}
+
+	// Migration: Add log and config columns to fuzzer_runs
+	_, err = pool.Exec(ctx, `
+		DO $$ 
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'fuzzer_runs' AND column_name = 'log'
+			) THEN
+				ALTER TABLE fuzzer_runs ADD COLUMN log TEXT;
+			END IF;
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'fuzzer_runs' AND column_name = 'config'
+			) THEN
+				ALTER TABLE fuzzer_runs ADD COLUMN config TEXT;
+			END IF;
+		END $$;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to add log/config columns to fuzzer_runs: %w", err)
+	}
+
 	return nil
 }

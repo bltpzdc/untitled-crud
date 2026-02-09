@@ -19,6 +19,8 @@ type Metadata struct {
 
 type RunDetailsWithId struct {
 	Id      int                               `json:"id"`
+	Log     pgtype.Text                       `json:"log,omitempty"`
+	Config  pgtype.Text                       `json:"config,omitempty"`
 	Crashes []CrashesGroupedByFailedOperation `json:"crashes"`
 }
 
@@ -77,6 +79,7 @@ type TestCase struct {
 	Hash            string
 	TotalOperations int
 	Test            pgtype.Text
+	Reason          pgtype.Text `json:"reason,omitempty"`
 	FSSummaries     []FsTestSummary
 }
 

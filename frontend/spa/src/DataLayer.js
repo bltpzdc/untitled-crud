@@ -135,13 +135,15 @@ class DiffuzzerStorage {
       const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
       for (const run of runs) {
-        let runbugs = await this._fetchJson(
+        let runDetails = await this._fetchJson(
           `/backend/runs/details/${run.id}`,
         );
-        console.log("runbugs");
-        console.log(runbugs);
+        console.log("runDetails");
+        console.log(runDetails);
 
-        runbugs = runbugs.crashes;
+        const runbugs = runDetails.crashes;
+        const runLog = runDetails.log || runDetails.Log;
+        const runConfig = runDetails.config || runDetails.Config;
         if (runbugs.length == 0){
           continue
         }
@@ -155,7 +157,7 @@ class DiffuzzerStorage {
         
         // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
         const fsset = new Set();
-        runbugs = runbugs.map(x => {
+        const processedBugs = runbugs.map(x => {
           for (const tc of x.TestCases){
             for (const fs of tc.FSSummaries){
               fsset.add(fs.FsName);
@@ -213,7 +215,7 @@ class DiffuzzerStorage {
         })
 
         console.log("runbugs");
-        console.log(runbugs);
+        console.log(processedBugs);
         
         const runTags = run.metadata && Array.isArray(run.metadata.tags) 
           ? run.metadata.tags
@@ -269,7 +271,9 @@ class DiffuzzerStorage {
             ? run.metadata.comment
             : "",
           tags: runTags,
-          bugs: runbugs,
+          bugs: processedBugs,
+          log: runLog,
+          config: runConfig,
         };
       }
     }
@@ -316,7 +320,7 @@ class DiffuzzerStorage {
       
       // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
       const fsset = new Set();
-      runbugs = runbugs.map(x => {
+      const processedBugs = runbugs.map(x => {
         for (const tc of x.TestCases){
           for (const fs of tc.FSSummaries){
             fsset.add(fs.FsName);
@@ -420,7 +424,9 @@ class DiffuzzerStorage {
           ? ""
           : run.comment,
         tags: runTags,
-        bugs: runbugs,
+        bugs: processedBugs,
+        log: runLog,
+        config: runConfig,
       };
     }
     return Object.values(this.runsById);
@@ -658,11 +664,13 @@ class DiffuzzerStorage {
     const minId = this.minRunId !== null ? this.minRunId : (runs.length > 0 ? Math.min(...runs.map(r => r.id)) : 0);
 
     for (const run of runs) {
-      let runbugs = await this._fetchJson(
+      let runDetails = await this._fetchJson(
         `/backend/runs/details/${run.id}`,
       );
 
-      runbugs = runbugs.crashes;
+      const runbugs = runDetails.crashes;
+      const runLog = runDetails.log || runDetails.Log;
+      const runConfig = runDetails.config || runDetails.Config;
       if (runbugs.length == 0){
         continue
       }
@@ -676,7 +684,7 @@ class DiffuzzerStorage {
       
       // Не фильтруем по количеству TestCases, чтобы не терять операции с одним багом
       const fsset = new Set();
-      runbugs = runbugs.map(x => {
+      const processedBugs = runbugs.map(x => {
         for (const tc of x.TestCases){
           for (const fs of tc.FSSummaries){
             fsset.add(fs.FsName);
@@ -760,7 +768,9 @@ class DiffuzzerStorage {
               })
               .filter(tag => tag != null && tag.length > 0)
           : [],
-        bugs: runbugs,
+        bugs: processedBugs,
+        log: runLog,
+        config: runConfig,
       };
     }
     return Object.values(this.runsById);

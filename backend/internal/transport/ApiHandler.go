@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/copier"
 	"github.com/metametamoon/untitled-crud/backend/internal/model"
 	"github.com/metametamoon/untitled-crud/backend/internal/service"
 	"github.com/metametamoon/untitled-crud/backend/internal/transport/dto"
@@ -25,6 +24,17 @@ func NewFuzzTraceHandler(service *service.FuzzTraceService) *FuzzTraceHandler {
 	return &FuzzTraceHandler{service: service}
 }
 
+// PostFuzzerRun godoc
+// @Summary      Upload a fuzzer run archive
+// @Description  Upload a ZIP archive containing fuzzer run data
+// @Tags         runs
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        file formData file true "ZIP archive file"
+// @Success      200  {object}  map[string]interface{} "status: success, id: run ID"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /v1/runs [post]
 func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -45,6 +55,17 @@ func (h *FuzzTraceHandler) PostFuzzerRun(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "id": runId})
 }
 
+// GetFuzzerRunMetadata godoc
+// @Summary      Get fuzzer run metadata
+// @Description  Get metadata for a specific fuzzer run by ID
+// @Tags         runs
+// @Produce      json
+// @Param        id   path      int  true  "Run ID"
+// @Success      200  {object}  dto.Metadata
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      404  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/metadata/{id} [get]
 func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -72,6 +93,14 @@ func (h *FuzzTraceHandler) GetFuzzerRunMetadata(c *gin.Context) {
 	c.JSON(http.StatusOK, metadata)
 }
 
+// GetFuzzerRunsMetadatas godoc
+// @Summary      Get all fuzzer runs metadata
+// @Description  Get metadata for all fuzzer runs
+// @Tags         runs
+// @Produce      json
+// @Success      200  {array}   dto.MetadataWithId
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/metadatas [get]
 func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	runs, err := h.service.GetRuns(c.Request.Context())
 	if err != nil {
@@ -95,6 +124,17 @@ func (h *FuzzTraceHandler) GetFuzzerRunsMetadatas(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// GetFuzzerRunDetails godoc
+// @Summary      Get fuzzer run details
+// @Description  Get detailed information about a fuzzer run including crashes
+// @Tags         runs
+// @Produce      json
+// @Param        id   path      int  true  "Run ID"
+// @Success      200  {object}  dto.RunDetailsWithId
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      404  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/details/{id} [get]
 func (h *FuzzTraceHandler) GetFuzzerRunDetails(c *gin.Context) {
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -113,7 +153,50 @@ func (h *FuzzTraceHandler) GetFuzzerRunDetails(c *gin.Context) {
 	}
 	var details dto.RunDetailsWithId
 	details.Id = runID
-	copier.Copy(&details.Crashes, &run.CrashesGroupedByFailedOperation)
+	details.Log = run.Log
+	details.Config = run.Config
+	
+	// Копируем crashes с явной обработкой вложенных структур
+	details.Crashes = make([]dto.CrashesGroupedByFailedOperation, len(run.CrashesGroupedByFailedOperation))
+	for i, crash := range run.CrashesGroupedByFailedOperation {
+		details.Crashes[i] = dto.CrashesGroupedByFailedOperation{
+			ID:        crash.ID,
+			RunID:     crash.RunID,
+			Operation: crash.Operation,
+			FolderID:  crash.FolderID,
+			Comment:   crash.Comment,
+			Tags:      crash.Tags,
+			TestCases: make([]dto.TestCase, len(crash.TestCases)),
+		}
+		
+		// Копируем TestCases с явной обработкой полей Test и Reason
+		for j, testCase := range crash.TestCases {
+			details.Crashes[i].TestCases[j] = dto.TestCase{
+				ID:              testCase.ID,
+				CrashID:         testCase.CrashID,
+				Hash:            testCase.Hash,
+				TotalOperations: testCase.TotalOperations,
+				Test:            testCase.Test,
+				Reason:          testCase.Reason,
+				FSSummaries:     make([]dto.FsTestSummary, len(testCase.FSSummaries)),
+			}
+			
+			// Копируем FSSummaries
+			for k, fsSummary := range testCase.FSSummaries {
+				details.Crashes[i].TestCases[j].FSSummaries[k] = dto.FsTestSummary{
+					ID:              fsSummary.ID,
+					TestCaseID:      fsSummary.TestCaseID,
+					FsName:          fsSummary.FsName,
+					FsSuccessCount:  fsSummary.FsSuccessCount,
+					FsFailureCount:  fsSummary.FsFailureCount,
+					FsExecutionTime: fsSummary.FsExecutionTime,
+					FsTrace:         fsSummary.FsTrace,
+					Stdout:          fsSummary.Stdout,
+					Stderr:          fsSummary.Stderr,
+				}
+			}
+		}
+	}
 
 	c.JSON(http.StatusOK, details)
 }
@@ -130,6 +213,17 @@ func parseOptionalDate(val string) (*time.Time, error) {
 	return &t, nil
 }
 
+// GetFuzzerRunsBySearchPattern godoc
+// @Summary      Search fuzzer runs by date range
+// @Description  Get fuzzer runs filtered by date range
+// @Tags         runs
+// @Produce      json
+// @Param        fromdate  query     string  false  "Start date (YYYY-MM-DD)"
+// @Param        todate    query     string  false  "End date (YYYY-MM-DD)"
+// @Success      200       {array}   dto.MetadataWithId
+// @Failure      400       {object}  map[string]string "error message"
+// @Failure      500       {object}  map[string]string "error message"
+// @Router       /runs/search [get]
 func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
 	fromDate, err := parseOptionalDate(c.Query("fromdate"))
 	if err != nil {
@@ -163,6 +257,16 @@ func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPattern(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// DownloadArchive godoc
+// @Summary      Download run archive
+// @Description  Download ZIP archive for a specific fuzzer run
+// @Tags         runs
+// @Produce      application/zip
+// @Param        id   path      int  true  "Run ID"
+// @Success      200  {file}    binary "ZIP file"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      404  {object}  map[string]string "error message"
+// @Router       /runs/archive/{id} [get]
 func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 	runId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -176,6 +280,17 @@ func (h *FuzzTraceHandler) DownloadArchive(c *gin.Context) {
 	c.File(file)
 }
 
+// DownloadBugArchive godoc
+// @Summary      Download bug archive
+// @Description  Download ZIP archive for a specific crash/bug test case
+// @Tags         bugs
+// @Produce      application/zip
+// @Param        id   path      int     true  "Crash ID"
+// @Param        hash query     string  false "Test case hash (optional)"
+// @Success      200  {file}    binary "ZIP file"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      404  {object}  map[string]string "error message"
+// @Router       /bugs/{id}/archive [get]
 func (h *FuzzTraceHandler) DownloadBugArchive(c *gin.Context) {
 	crashID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -189,7 +304,6 @@ func (h *FuzzTraceHandler) DownloadBugArchive(c *gin.Context) {
 		return
 	}
 	
-	// Удаляем временный файл после отправки
 	defer func() {
 		if err := os.Remove(file); err != nil {
 			slog.Error("Failed to remove temp file", "file", file, "error", err)
@@ -206,6 +320,14 @@ func (h *FuzzTraceHandler) DownloadBugArchive(c *gin.Context) {
 	c.File(file)
 }
 
+// GetAllTags godoc
+// @Summary      Get all tags
+// @Description  Get list of all available tags
+// @Tags         tags
+// @Produce      json
+// @Success      200  {array}   dto.Tag
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /tags [get]
 func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
 	tags, err := h.service.GetAllTags(c.Request.Context())
 	if err != nil {
@@ -223,6 +345,18 @@ func (h *FuzzTraceHandler) GetAllTags(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// UpdateRunTags godoc
+// @Summary      Update run tags
+// @Description  Update tags for a specific fuzzer run
+// @Tags         runs
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Run ID"
+// @Param        request body object true "Tags array" SchemaExample({"tags": ["tag1", "tag2"]})
+// @Success      200  {object}  map[string]string "status: success"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/{id}/tags [put]
 func (h *FuzzTraceHandler) UpdateRunTags(c *gin.Context) {
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -248,6 +382,18 @@ func (h *FuzzTraceHandler) UpdateRunTags(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// UpdateRunComment godoc
+// @Summary      Update run comment
+// @Description  Update comment for a specific fuzzer run
+// @Tags         runs
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Run ID"
+// @Param        request body object true "Comment" SchemaExample({"comment": "Test comment"})
+// @Success      200  {object}  map[string]string "status: success"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/{id}/comment [put]
 func (h *FuzzTraceHandler) UpdateRunComment(c *gin.Context) {
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -273,6 +419,18 @@ func (h *FuzzTraceHandler) UpdateRunComment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// UpdateCrashTags godoc
+// @Summary      Update crash tags
+// @Description  Update tags for a specific crash/bug
+// @Tags         bugs
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Crash ID"
+// @Param        request body object true "Tags array" SchemaExample({"tags": ["tag1", "tag2"]})
+// @Success      200  {object}  map[string]string "status: success"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /bugs/{id}/tags [put]
 func (h *FuzzTraceHandler) UpdateCrashTags(c *gin.Context) {
 	crashID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -298,6 +456,18 @@ func (h *FuzzTraceHandler) UpdateCrashTags(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// UpdateCrashComment godoc
+// @Summary      Update crash comment
+// @Description  Update comment for a specific crash/bug
+// @Tags         bugs
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Crash ID"
+// @Param        request body object true "Comment" SchemaExample({"comment": "Test comment"})
+// @Success      200  {object}  map[string]string "status: success"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /bugs/{id}/comment [put]
 func (h *FuzzTraceHandler) UpdateCrashComment(c *gin.Context) {
 	crashID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -323,6 +493,16 @@ func (h *FuzzTraceHandler) UpdateCrashComment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// DeleteRun godoc
+// @Summary      Delete fuzzer run
+// @Description  Delete a specific fuzzer run by ID
+// @Tags         runs
+// @Produce      json
+// @Param        id   path      int  true  "Run ID"
+// @Success      200  {object}  map[string]string "status: success"
+// @Failure      400  {object}  map[string]string "error message"
+// @Failure      500  {object}  map[string]string "error message"
+// @Router       /runs/{id} [delete]
 func (h *FuzzTraceHandler) DeleteRun(c *gin.Context) {
 	runID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -340,6 +520,18 @@ func (h *FuzzTraceHandler) DeleteRun(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+// GetFuzzerRunsBySearchPatternWithTags godoc
+// @Summary      Search fuzzer runs by date range and tags
+// @Description  Get fuzzer runs filtered by date range and tags
+// @Tags         runs
+// @Produce      json
+// @Param        fromdate  query     string  false  "Start date (YYYY-MM-DD)"
+// @Param        todate    query     string  false  "End date (YYYY-MM-DD)"
+// @Param        tags      query     string  false  "Comma-separated list of tags"
+// @Success      200       {array}   dto.MetadataWithId
+// @Failure      400       {object}  map[string]string "error message"
+// @Failure      500       {object}  map[string]string "error message"
+// @Router       /runs/search-with-tags [get]
 func (h *FuzzTraceHandler) GetFuzzerRunsBySearchPatternWithTags(c *gin.Context) {
 	fromDate, err := parseOptionalDate(c.Query("fromdate"))
 	if err != nil {

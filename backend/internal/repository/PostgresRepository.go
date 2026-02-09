@@ -36,10 +36,17 @@ func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun
 	}
 
 	if runID == 0 {
+		var logValue, configValue interface{}
+		if run.Log.Valid {
+			logValue = run.Log.String
+		}
+		if run.Config.Valid {
+			configValue = run.Config.String
+		}
 		err := r.db.QueryRow(ctx,
-			`INSERT INTO fuzzer_runs (timestamp, failure_count) 
-             VALUES ($1, $2) RETURNING id`,
-			run.Timestamp, run.FailureCount,
+			`INSERT INTO fuzzer_runs (timestamp, failure_count, log, config) 
+             VALUES ($1, $2, $3, $4) RETURNING id`,
+			run.Timestamp, run.FailureCount, logValue, configValue,
 		).Scan(&runID)
 		if err != nil {
 			return err
@@ -63,15 +70,19 @@ func (r *FuzzTraceRepository) StoreRun(ctx context.Context, run *model.FuzzerRun
 func (r *FuzzTraceRepository) GetRun(ctx context.Context, id int) (*model.FuzzerRun, error) {
 	var run model.FuzzerRun
 
-	var comment pgtype.Text
+	var comment, logStr, configStr pgtype.Text
 	err := r.db.QueryRow(ctx, `
-        SELECT id, timestamp, failure_count, comment
+        SELECT id, timestamp, failure_count, comment, log, config
         FROM fuzzer_runs WHERE id = $1
-    `, id).Scan(&run.ID, &run.Timestamp, &run.FailureCount, &comment)
+    `, id).Scan(&run.ID, &run.Timestamp, &run.FailureCount, &comment, &logStr, &configStr)
 	
 	if err == nil && comment.Valid {
 		commentStr := comment.String
 		run.Comment = &commentStr
+	}
+	if err == nil {
+		run.Log = logStr
+		run.Config = configStr
 	}
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -188,10 +199,15 @@ func (r *FuzzTraceRepository) saveRunHierarchy(ctx context.Context, runID int, r
 
 			testJSON, _ := json.Marshal(testCase.Test)
 
+			var reasonValue interface{}
+			if testCase.Reason.Valid {
+				reasonValue = testCase.Reason.String
+			}
+
 			err := r.db.QueryRow(ctx,
-				`INSERT INTO test_cases (crash_id, hash, total_operations, test) 
-                 VALUES ($1, $2, $3, $4) RETURNING id`,
-				testCase.CrashID, testCase.Hash, testCase.TotalOperations, testJSON,
+				`INSERT INTO test_cases (crash_id, hash, total_operations, test, reason) 
+                 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+				testCase.CrashID, testCase.Hash, testCase.TotalOperations, testJSON, reasonValue,
 			).Scan(&testCase.ID)
 			if err != nil {
 				return err
@@ -269,7 +285,7 @@ func (r *FuzzTraceRepository) getRunOpCrashes(ctx context.Context, runID int) ([
 
 func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID int) ([]model.TestCase, error) {
 	rows, err := r.db.Query(ctx,
-		"SELECT id, hash, total_operations, test FROM test_cases WHERE crash_id = $1",
+		"SELECT id, hash, total_operations, test, reason FROM test_cases WHERE crash_id = $1",
 		crashID,
 	)
 	if err != nil {
@@ -281,12 +297,22 @@ func (r *FuzzTraceRepository) getOpCrashTestCases(ctx context.Context, crashID i
 	for rows.Next() {
 		var testCase model.TestCase
 		var testJSON []byte
+		var reasonStr *string
 
-		if err := rows.Scan(&testCase.ID, &testCase.Hash, &testCase.TotalOperations, &testJSON); err != nil {
+		if err := rows.Scan(&testCase.ID, &testCase.Hash, &testCase.TotalOperations, &testJSON, &reasonStr); err != nil {
 			return nil, err
 		}
 
 		json.Unmarshal(testJSON, &testCase.Test)
+
+		if reasonStr != nil {
+			testCase.Reason = pgtype.Text{
+				String: *reasonStr,
+				Valid:  true,
+			}
+		} else {
+			testCase.Reason = pgtype.Text{Valid: false}
+		}
 
 		fsSummaries, err := r.getTestCaseFsSummaries(ctx, testCase.ID)
 		if err != nil {

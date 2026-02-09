@@ -28,7 +28,7 @@ services:
     build: ./backend
     restart: always
     ports:
-      - "8080:8080"
+      - "0.0.0.0:8080:8080"
     environment:
       DB_USER: fuzzer_user
       DB_PASSWORD: fuzzer_password
