@@ -141,11 +141,30 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 	}
 	items, _ := os.ReadDir(tmpDir)
 	crashesGroupedByFailedOperations := make([]model.CrashesGroupedByFailedOperation, 0)
+	var logContent, configContent pgtype.Text
 	for _, topLevel := range items {
 		if !topLevel.IsDir() && topLevel.Name() == "metadata.json" {
 			_, err2 := s.extractMetadata(topLevel, tmpDir, metadata)
 			if err2 != nil {
 				return 0, err2
+			}
+		}
+		if !topLevel.IsDir() && topLevel.Name() == "diffuzzer.log" {
+			contentBytes, err := os.ReadFile(filepath.Join(tmpDir, topLevel.Name()))
+			if err == nil {
+				logContent = pgtype.Text{
+					String: string(contentBytes),
+					Valid:  true,
+				}
+			}
+		}
+		if !topLevel.IsDir() && topLevel.Name() == "config.toml" {
+			contentBytes, err := os.ReadFile(filepath.Join(tmpDir, topLevel.Name()))
+			if err == nil {
+				configContent = pgtype.Text{
+					String: string(contentBytes),
+					Valid:  true,
+				}
 			}
 		}
 		if topLevel.IsDir() && topLevel.Name() == "crashes" {
@@ -269,6 +288,8 @@ func (s *FuzzTraceService) StoreFuzzerRun(ctx context.Context, runArchivePath st
 		ID:                              0,
 		Timestamp:                       metadata.Timestamp,
 		FailureCount:                    metadata.FailureCount,
+		Log:                             logContent,
+		Config:                          configContent,
 		Tags:                            runTags,
 		CrashesGroupedByFailedOperation: crashesGroupedByFailedOperations,
 	}
@@ -291,6 +312,7 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 		Hash:            hash,
 		TotalOperations: 0,
 		Test:            pgtype.Text{},
+		Reason:          pgtype.Text{Valid: false},
 		FSSummaries:     nil,
 	}
 	fsSummaries := make([]model.FsTestSummary, 0)
@@ -333,6 +355,15 @@ func (s *FuzzTraceService) extractTestCase(testDir string, hash string) (model.T
 			testCase.Test = pgtype.Text{
 				String: string(contentBytes),
 				Valid:  true,
+			}
+		}
+		if testFile.Name() == "reason.md" {
+			contentBytes, err := os.ReadFile(filepath.Join(testDir, testFile.Name()))
+			if err == nil {
+				testCase.Reason = pgtype.Text{
+					String: string(contentBytes),
+					Valid:  true,
+				}
 			}
 		}
 	}

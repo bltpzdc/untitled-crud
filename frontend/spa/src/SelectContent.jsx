@@ -222,11 +222,11 @@ export default function SelectContent({ callback }) {
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
-        <Tabs
-          value={value}
-          onChange={handleChange}
-          aria-label="Select mode"
-          variant="standard"
+      <Tabs
+        value={value}
+        onChange={handleChange}
+        aria-label="Select mode"
+        variant="standard"
           sx={{
             minHeight: 48,
             '& .MuiTabs-flexContainer': {
@@ -234,9 +234,9 @@ export default function SelectContent({ callback }) {
             },
           }}
         >
-          <Tab
-            label="+"
-            {...a11yProps(1)}
+        <Tab
+          label="+"
+          {...a11yProps(1)}
             onClick={() => {
               // Явно открываем диалог выбора ZIP по клику на "+"
               openZipUploadDialog();
@@ -468,19 +468,19 @@ export default function SelectContent({ callback }) {
           </Stack>
         </Box>
       )}
-      
+
       <TabPanel value={value} index={0}>
         <SideMenuContent callback={callback} mode={mode} />
       </TabPanel>
       <TabPanel value={value} index={1}>
         <Box sx={{ p: 3 }}>
-          <Button
+        <Button
             variant="contained"
             onClick={openZipUploadDialog}
             fullWidth
-          >
-            Загрузить ZIP
-          </Button>
+        >
+          Загрузить ZIP
+        </Button>
         </Box>
       </TabPanel>
     </Box>

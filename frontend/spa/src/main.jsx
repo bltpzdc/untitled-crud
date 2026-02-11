@@ -31,16 +31,16 @@ function App() {
 
   return (
     <ThemeProvider theme={currentTheme}>
-      <CssBaseline />
-      <StrictMode>
-        <Box sx={{ display: "flex" }}>
-          {/* NOTE(savikin): put sidemenu inside MainMenu
-           while working around layout bugs */}
+    <CssBaseline />
+    <StrictMode>
+      <Box sx={{ display: "flex" }}>
+        {/* NOTE(savikin): put sidemenu inside MainMenu
+         while working around layout bugs */}
           <MainMenu themeMode={themeMode} setThemeMode={setThemeMode} />
-        </Box>
-      </StrictMode>
-    </ThemeProvider>
-  );
+      </Box>
+    </StrictMode>
+  </ThemeProvider>
+);
 }
 
 createRoot(document.getElementById("root")).render(<App />);

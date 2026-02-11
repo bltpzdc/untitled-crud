@@ -25,6 +25,8 @@ type FuzzerRun struct {
 	Timestamp                       string                            `db:"timestamp"`
 	FailureCount                    int                               `db:"failure_count"`
 	Comment                         *string                           `db:"comment"`
+	Log                             pgtype.Text                       `db:"log"`
+	Config                          pgtype.Text                       `db:"config"`
 	Tags                            []string                          `db:"-"`
 	CrashesGroupedByFailedOperation []CrashesGroupedByFailedOperation `db:"-"`
 }
@@ -51,6 +53,7 @@ type TestCase struct {
 	Hash            string          `db:"hash"`
 	TotalOperations int             `db:"total_operations"`
 	Test            pgtype.Text     `db:"test"`
+	Reason          pgtype.Text     `db:"reason"`
 	FSSummaries     []FsTestSummary `db:"-"`
 }
 

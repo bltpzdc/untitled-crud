@@ -6,9 +6,10 @@ COPY . /app/
 WORKDIR /app/cmd/server
 RUN go build -o /app/diffuzzer .
 
-RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN export PATH=$(go env GOPATH)/bin:$PATH
-RUN swag init -g Main.go -o /app/docs
+WORKDIR /app
+RUN go install github.com/swaggo/swag/cmd/swag@latest && \
+    export PATH=$(go env GOPATH)/bin:$PATH && \
+    swag init -g cmd/server/Main.go -o /app/docs --parseDependency --parseInternal
 
 FROM scratch
 

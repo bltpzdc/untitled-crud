@@ -41,7 +41,7 @@ import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import { createPatch, diffChars } from "diff";
+import { createPatch, diffChars, diffLines } from "diff";
 import { Diff, Hunk, parseDiff } from "react-diff-view";
 import "react-diff-view/style/index.css";
 import "./DiffTheme.css"
@@ -76,11 +76,63 @@ function a11yProps(index) {
   };
 }
 function formpatch(v1, v2) {
-  let x = createPatch("test", v1, v2);
+  if (!v1) v1 = '';
+  if (!v2) v2 = '';
+  
+  try {
+    let x = createPatch("test", v1, v2, "old", "new", { context: 999999 });
   x = x.split("\n");
-  x.splice(0, 1);
-  x.splice(0, 1);
+    if (x.length > 2) {
+      x.splice(0, 2);
+    }
   return x.join("\n");
+  } catch (error) {
+    console.error("Error in formpatch:", error);
+    const leftLines = v1.split('\n');
+    const rightLines = v2.split('\n');
+    const diff = diffLines(v1, v2);
+    
+    let result = [];
+    
+    for (const part of diff) {
+      if (!part.value) continue;
+      
+      const lines = part.value.split('\n');
+      if (lines[lines.length - 1] === '') {
+        lines.pop();
+      }
+      
+      if (part.added) {
+        for (const line of lines) {
+          result.push(`+${line}`);
+        }
+      } else if (part.removed) {
+        for (const line of lines) {
+          result.push(`-${line}`);
+        }
+      } else {
+        for (const line of lines) {
+          result.push(` ${line}`);
+        }
+      }
+    }
+    
+    if (result.length === 0) {
+      return '';
+    }
+    
+    const leftCount = leftLines.length;
+    const rightCount = rightLines.length;
+    const hunkHeader = `@@ -1,${leftCount} +1,${rightCount} @@`;
+    const fileHeader = `diff --git a/left b/right\nindex 0000000..1111111 100644\n--- a/left\n+++ b/right`;
+    const patch = fileHeader + '\n' + hunkHeader + '\n' + result.join('\n');
+    
+    const patchLines = patch.split('\n');
+    if (patchLines.length >= 2) {
+      patchLines.splice(0, 2);
+    }
+    return patchLines.join('\n');
+  }
 }
 
 // Нормализуем текст для diff: если это JSON (или объект), красиво форматируем
@@ -136,7 +188,7 @@ index 5006ce3..d2248fb 100644
    }
 `;
 
-function renderFile({ oldRevision, newRevision, type, hunks }) {
+function renderFile({ oldRevision, newRevision, type, hunks }, highlightJSON, themeMode) {
   return (
     <Diff
       key={oldRevision + "-" + newRevision}
@@ -147,6 +199,54 @@ function renderFile({ oldRevision, newRevision, type, hunks }) {
     >
       {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
     </Diff>
+  );
+}
+
+// Компонент для diff view с подсветкой синтаксиса
+function DiffViewWithHighlight({ parsed, isJSON, highlightJSON, themeMode }) {
+  const diffContainerRef = React.useRef(null);
+  
+  // Применяем подсветку синтаксиса после рендеринга diff
+  React.useEffect(() => {
+    if (diffContainerRef.current && isJSON && highlightJSON) {
+      // Используем setTimeout, чтобы дать время react-diff-view отрендерить DOM
+      const timeoutId = setTimeout(() => {
+        const diffLines = diffContainerRef.current.querySelectorAll('.diff-line');
+        diffLines.forEach((line) => {
+          // Находим ячейки с кодом (обычно это последняя td в строке, но не номер строки)
+          const cells = line.querySelectorAll('td');
+          cells.forEach((cell) => {
+            // Пропускаем ячейки с номерами строк и другие служебные ячейки
+            if (cell.classList.contains('diff-line-number') || 
+                cell.classList.contains('diff-gutter') ||
+                cell.dataset.highlighted === 'true') {
+              return;
+            }
+            
+            const originalText = cell.textContent || '';
+            if (originalText.trim() && (originalText.includes('{') || originalText.includes('['))) {
+              try {
+                const highlighted = highlightJSON(originalText);
+                if (highlighted && highlighted.includes('<span')) {
+                  cell.innerHTML = highlighted;
+                  cell.dataset.highlighted = 'true';
+                }
+              } catch (e) {
+                // Игнорируем ошибки
+              }
+            }
+          });
+        });
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [parsed, isJSON, highlightJSON]);
+  
+  return (
+    <Box ref={diffContainerRef} sx={{ maxHeight: '400px', overflow: 'auto' }}>
+      {parsed.map((file) => renderFile(file, highlightJSON, themeMode))}
+    </Box>
   );
 }
 
@@ -166,6 +266,8 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
   const [diffViewModes, setDiffViewModes] = React.useState({});
   // Состояние для полноэкранного просмотра таблицы diff (по ключу bugId-kind)
   const [diffFullscreenOpen, setDiffFullscreenOpen] = React.useState({});
+  // Состояние для свернутых операций в diff таблице (по ключу bugId-kind-opIdx)
+  const [collapsedOps, setCollapsedOps] = React.useState({});
 
   React.useEffect(() => {
     async function get_tags() {
@@ -426,23 +528,173 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
     }, 0);
   };
 
+  // Функция для подсветки синтаксиса JSON
+  const highlightJSON = (jsonString) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const formatted = JSON.stringify(parsed, null, 2);
+      
+      // Сначала экранируем весь текст
+      let result = formatted
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // Затем применяем подсветку синтаксиса
+      result = result
+        // Подсветка ключей (строки с двоеточием) - сначала, чтобы не конфликтовать
+        .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+        // Подсветка строковых значений (строки после двоеточия, но не ключи)
+        .replace(/: "([^"]+)"/g, ': <span class="json-string">"$1"</span>')
+        // Подсветка литералов
+        .replace(/\b(true|false|null)\b/g, '<span class="json-literal">$1</span>')
+        // Подсветка чисел (простые числа, не в строках)
+        .replace(/([^"\\]|^)(-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)([^"\\]|$)/g, (match, before, number, after) => {
+          // Проверяем, что это не часть строки
+          if (before === '"' || after === '"') return match;
+          return `${before}<span class="json-number">${number}</span>${after}`;
+        });
+      
+      return result;
+    } catch (e) {
+      return jsonString
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+  };
+
+  // Функция для подсветки синтаксиса TOML
+  const highlightTOML = (tomlString) => {
+    // Сначала экранируем HTML
+    let result = tomlString
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Обрабатываем в правильном порядке, чтобы избежать конфликтов
+    // 1. Комментарии (самые приоритетные)
+    result = result.replace(/^(\s*)(#.*)$/gm, (match, indent, comment) => {
+      return `${indent}<span class="toml-comment">${comment}</span>`;
+    });
+    
+    // 2. Секции (до обработки ключей)
+    result = result.replace(/^(\s*)(\[\[?[^\]]+\]\]?)/gm, (match, indent, section) => {
+      return `${indent}<span class="toml-section">${section}</span>`;
+    });
+    
+    // 3. Строковые значения (до обработки ключей и чисел)
+    result = result.replace(/(["'])((?:(?=(\\?))\3.)*?)\1/g, (match, quote, content) => {
+      return `${quote}<span class="toml-string">${content}</span>${quote}`;
+    });
+    
+    // 4. Ключи (простые ключи, не в строках и не в секциях)
+    result = result.replace(/(^|\n)(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*/gm, (match, lineStart, indent, key) => {
+      // Проверяем, что это не часть уже обработанной строки или секции
+      if (match.includes('<span')) return match;
+      return `${lineStart}${indent}<span class="toml-key">${key}</span> = `;
+    });
+    
+    // 5. Булевы значения (не в строках)
+    result = result.replace(/([^"'])\b(true|false)\b([^"'])/gi, (match, before, bool, after) => {
+      // Проверяем, что это не часть строки
+      if (before === '"' || before === "'" || after === '"' || after === "'") return match;
+      return `${before}<span class="toml-boolean">${bool}</span>${after}`;
+    });
+    
+    // 6. Числа (в последнюю очередь, не в строках)
+    result = result.replace(/([^"'<])\b(\d+(?:\.\d+)?)\b([^"'>])/g, (match, before, number, after) => {
+      // Проверяем, что это не часть строки или уже обработанного элемента
+      if (before === '"' || before === "'" || after === '"' || after === "'" || 
+          before === '<' || after === '>') return match;
+      return `${before}<span class="toml-number">${number}</span>${after}`;
+    });
+    
+    return result;
+  };
+
   const renderMarkdown = (text) => {
     if (!text || !text.trim()) {
       return null;
     }
     
-    return text
+    // Сначала обрабатываем блоки кода с тройными обратными кавычками (```language ... ```)
+    // Заменяем их на плейсхолдеры, чтобы они не обрабатывались дальше
+    const codeBlocks = [];
+    let codeBlockIndex = 0;
+    let result = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+      const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`;
+      const escapedCode = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      codeBlocks[codeBlockIndex] = `<pre><code class="language-${lang || ''}">${escapedCode.trim()}</code></pre>`;
+      codeBlockIndex++;
+      return placeholder;
+    });
+    
+    // Экранируем HTML
+    result = result
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+      .replace(/>/g, '&gt;');
+    
+    // Обрабатываем заголовки с подчеркиванием (=== для h1, --- для h2)
+    const lines = result.split('\n');
+    const processedLines = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const nextLine = lines[i + 1];
+      
+      if (nextLine && /^={3,}$/.test(nextLine.trim())) {
+        // H1 с подчеркиванием ===
+        processedLines.push(`<h1>${line.trim()}</h1>`);
+        i++; // Пропускаем следующую строку с ===
+        continue;
+      } else if (nextLine && /^-{3,}$/.test(nextLine.trim())) {
+        // H2 с подчеркиванием ---
+        processedLines.push(`<h2>${line.trim()}</h2>`);
+        i++; // Пропускаем следующую строку с ---
+        continue;
+      }
+      processedLines.push(line);
+    }
+    result = processedLines.join('\n');
+    
+    // Обрабатываем заголовки с # (должны быть после обработки подчеркиваний)
+    result = result
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/\n/g, '<br />');
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    
+    // Обрабатываем inline код (одиночные обратные кавычки)
+    // Делаем это аккуратно, чтобы не затронуть плейсхолдеры блоков кода
+    result = result.replace(/`([^`\n]+)`/g, (match, code) => {
+      // Проверяем, не является ли это частью плейсхолдера
+      if (match.includes('__CODE_BLOCK_')) {
+        return match;
+      }
+      return `<code>${code}</code>`;
+    });
+    
+    // Обрабатываем жирный текст
+    result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Обрабатываем курсив
+    result = result.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Обрабатываем ссылки
+    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Заменяем переносы строк на <br /> (кроме тех, что уже внутри <pre>)
+    result = result.replace(/\n/g, '<br />');
+    
+    // Восстанавливаем блоки кода
+    codeBlocks.forEach((codeBlock, index) => {
+      result = result.replace(`__CODE_BLOCK_${index}__`, codeBlock);
+    });
+    
+    return result;
   };
 
   const handleDeleteRun = async (runId) => {
@@ -622,8 +874,8 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
           }}
           sx={{ 
             position: 'fixed',
-            top: 16,
-            right: 16,
+            top: 8,
+            right: 8,
             zIndex: 1300,
             color: 'var(--text-neutral-primary)',
             backgroundColor: 'var(--surface-neutral-primary)',
@@ -833,11 +1085,11 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                     return filtered;
                                   }}
                                   renderInput={(params) => (
-                                    <TextField
+                          <TextField
                                       {...params}
-                                      size="small"
+                            size="small"
                                       placeholder="Добавить теги (введите и нажмите Enter)"
-                                      fullWidth
+                            fullWidth
                                     />
                                   )}
                                   renderTags={(value, getTagProps) => {
@@ -877,7 +1129,7 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                   disabled
                                   error
                                   helperText="Не удалось загрузить поле тегов"
-                                />
+                          />
                               );
                             }
                           })()}
@@ -936,7 +1188,7 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                             ) : (
                               <Box
                                 onClick={() => handleCommentClick(item.id)}
-                                sx={{
+                            sx={{
                                   minHeight: '40px',
                                   p: 1.5,
                                   border: '1px solid var(--border-neutral-secondary)',
@@ -969,6 +1221,122 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                       </Box>
                     </Box>
                   </Box>
+                  
+                  {/* Блоки для log и config файлов */}
+                  {(() => {
+                    const logRaw = item.log || item.Log;
+                    const configRaw = item.config || item.Config;
+                    
+                    let logStr = '';
+                    let configStr = '';
+                    
+                    // Обрабатываем log
+                    if (logRaw) {
+                      if (typeof logRaw === 'string') {
+                        logStr = logRaw;
+                      } else if (logRaw && typeof logRaw === 'object') {
+                        if (logRaw.Valid !== false && logRaw.String !== undefined && logRaw.String !== null) {
+                          logStr = logRaw.String;
+                        } else if (logRaw.string !== undefined && logRaw.string !== null) {
+                          logStr = logRaw.string;
+                        }
+                      }
+                    }
+                    
+                    // Обрабатываем config
+                    if (configRaw) {
+                      if (typeof configRaw === 'string') {
+                        configStr = configRaw;
+                      } else if (configRaw && typeof configRaw === 'object') {
+                        if (configRaw.Valid !== false && configRaw.String !== undefined && configRaw.String !== null) {
+                          configStr = configRaw.String;
+                        } else if (configRaw.string !== undefined && configRaw.string !== null) {
+                          configStr = configRaw.string;
+                        }
+                      }
+                    }
+                    
+                    if (!logStr && !configStr) return null;
+                    
+                    return (
+                      <Box sx={{ mt: 3, mb: 3 }}>
+                        {logStr && (
+                          <Accordion elevation={0} square sx={{ mb: 2, border: '1px solid var(--border-neutral-primary)', "&:before": { display: "none" } }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="fieldHeader">diffuzzer.log</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <Box
+                                component="pre"
+                                sx={{ 
+                                  p: 2, 
+                                  margin: 0,
+                                  maxHeight: '400px',
+                                  overflow: 'auto',
+                                  backgroundColor: 'var(--surface-neutral-primary)',
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.875rem',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word'
+                                }}
+                                dangerouslySetInnerHTML={{
+                                  __html: logStr.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                                }}
+                              />
+                            </AccordionDetails>
+                          </Accordion>
+                        )}
+                        {configStr && (
+                          <Accordion elevation={0} square sx={{ mb: 2, border: '1px solid var(--border-neutral-primary)', "&:before": { display: "none" } }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="fieldHeader">config.toml</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Box
+                                component="pre"
+                                sx={{ 
+                                  p: 2,
+                                  margin: 0,
+                                  maxHeight: '400px',
+                                  overflow: 'auto',
+                                  backgroundColor: 'var(--surface-neutral-primary)',
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.875rem',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                  '& .toml-comment': { 
+                                    color: themeMode === 'dark' ? '#6a9955' : '#6a737d', 
+                                    fontStyle: 'italic' 
+                                  },
+                                  '& .toml-section': { 
+                                    color: themeMode === 'dark' ? '#569cd6' : '#005cc5', 
+                                    fontWeight: 'bold' 
+                                  },
+                                  '& .toml-key': { 
+                                    color: themeMode === 'dark' ? '#9cdcfe' : '#0066cc', 
+                                    fontWeight: 500 
+                                  },
+                                  '& .toml-string': { 
+                                    color: themeMode === 'dark' ? '#ce9178' : '#032f62' 
+                                  },
+                                  '& .toml-number': { 
+                                    color: themeMode === 'dark' ? '#b5cea8' : '#005cc5' 
+                                  },
+                                  '& .toml-boolean': { 
+                                    color: themeMode === 'dark' ? '#dcdcaa' : '#e36209', 
+                                    fontWeight: 500 
+                                  }
+                                }}
+                                dangerouslySetInnerHTML={{
+                                  __html: configStr ? highlightTOML(configStr) : ''
+                                }}
+                              />
+                            </AccordionDetails>
+                          </Accordion>
+                        )}
+                      </Box>
+                    );
+                  })()}
                   
                   {/* Заголовок "Баги" */}
                   <Box sx={{ mt: 3, mb: 2 }}>
@@ -1042,67 +1410,85 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                     });
                     
                     return (
-                      <Accordion
-                        elevation={0}
-                        square
-                        sx={{
+                  <Accordion
+                    elevation={0}
+                    square
+                    sx={{
                           border: "1px solid var(--border-neutral-primary)",
-                          "&:before": { display: "none" },
+                      "&:before": { display: "none" },
                           backgroundColor: 'var(--surface-neutral-primary)',
-                        }}
-                      >
-                        <AccordionSummary
-                          expandIcon={
-                            <Box sx={{ display: "flex", alignItems: "center" }}>
-                              <Chip
-                                label={allBugs.length.toString()}
-                                color="var(--chip-info-default)"
-                                size="small"
-                                sx={{ borderRadius: 999, mr: 2.5 }}
-                              />
-                              <ExpandMoreIcon className="MuiAccordionSummary-expandIcon" />
-                            </Box>
-                          }
-                          sx={{
-                            minHeight: 48,
-                            paddingLeft: 0,
-                            "& .MuiAccordionSummary-content": {
-                              margin: 0,
-                            },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{
+                        minHeight: 48,
+                        paddingLeft: 0,
+                        "& .MuiAccordionSummary-content": {
+                          margin: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "100%",
+                          mr: 2,
+                        },
+                        "& .MuiAccordionSummary-expandIconWrapper": {
+                          transform: "none !important",
+                          "& .MuiSvgIcon-root": {
+                            transform: "none !important",
+                          },
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+                        <Typography variant="fieldHeader" sx={{ mr: 2 }}>Баги</Typography>
+                        <Chip
+                          label={allBugs.length.toString()}
+                          color="var(--chip-info-default)"
+                          size="small"
+                          sx={{ 
+                            borderRadius: 999,
+                            transform: "none !important",
+                            transition: "none !important",
+                            "& .MuiChip-label": {
+                              transform: "none !important",
+                              writingMode: "horizontal-tb !important",
+                              textOrientation: "mixed !important",
+                            }
                           }}
-                        >
-                          <Typography variant="fieldHeader">Баги</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
+                        />
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
                           <List sx={{ py: 0 }}>
                             {allBugs.map((bugItem, idx) => {
-                              return (
+                                return (
                                 <ListItem key={`bug-${bugItem.bug.ID || bugItem.bug.id || idx}-${bugItem.hash || 'no-hash'}`} sx={{ py: 0.5 }}>
-                                  <ListItemButton
-                                    onClick={() => {
+                                    <ListItemButton
+                                      onClick={() => {
                                       const bugWithDatatype = { 
                                         ...bugItem.bug, 
                                         datatype: "bug", 
                                         selectedTestCase: bugItem.testCase 
                                       };
                                       tablistAppend(bugWithDatatype);
-                                    }}
+                                      }}
                                     sx={{ py: 0.5, minHeight: 36 }}
-                                  >
-                                    <ListItemText
+                                    >
+                                      <ListItemText
                                       primary={
                                         <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
                                           {bugItem.label}
                                         </Typography>
                                       }
-                                    />
-                                  </ListItemButton>
-                                </ListItem>
-                              );
-                            })}
-                          </List>
-                        </AccordionDetails>
-                      </Accordion>
+                                      />
+                                    </ListItemButton>
+                                  </ListItem>
+                                );
+                              })}
+                        </List>
+                    </AccordionDetails>
+                  </Accordion>
                     );
                   })()}
                 </>
@@ -1291,7 +1677,7 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                   ID бага:
                                 </Typography>
                                 <Typography variant="fieldValue">
-                                  {bugId || "N/A"}
+                                  {testCaseToUse?.ID || testCaseToUse?.id || bugId || "N/A"}
                                 </Typography>
                               </Box>
 
@@ -1438,8 +1824,8 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                       })}
                                     </Box>
                                   )}
-                                </>
-                              )}
+                </>
+              )}
                             </Box>
 
                             {/* Правая колонка: теги + комментарий */}
@@ -1670,9 +2056,117 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                           </Box>
                         </Box>
 
+                        {/* Блок для reason.md */}
+                        {testCaseToUse && (() => {
+                          // Проверяем все возможные варианты получения Reason
+                          const reasonRaw = testCaseToUse.Reason || testCaseToUse.reason;
+                          let reasonStr = '';
+                          
+                          // Отладочный вывод - показываем полную структуру TestCase
+                          console.log('Reason debug:', {
+                            hasTestCase: !!testCaseToUse,
+                            reasonRaw,
+                            reasonRawType: typeof reasonRaw,
+                            reasonRawKeys: reasonRaw && typeof reasonRaw === 'object' ? Object.keys(reasonRaw) : null,
+                            testCaseKeys: testCaseToUse ? Object.keys(testCaseToUse) : null,
+                            fullTestCase: testCaseToUse,
+                            allTestCases: item.TestCases,
+                            selectedTestCase: item.selectedTestCase
+                          });
+                          
+                          // Если Reason не найден в testCaseToUse, пробуем найти в других TestCases
+                          let reasonToUse = reasonRaw;
+                          if (!reasonToUse && item.TestCases && Array.isArray(item.TestCases)) {
+                            for (const tc of item.TestCases) {
+                              if (tc.Reason || tc.reason) {
+                                reasonToUse = tc.Reason || tc.reason;
+                                console.log('Found Reason in another TestCase:', { tc, reason: reasonToUse });
+                                break;
+                              }
+                            }
+                          }
+                          
+                          if (reasonToUse !== undefined && reasonToUse !== null) {
+                            if (typeof reasonToUse === 'string') {
+                              reasonStr = reasonToUse;
+                            } else if (reasonToUse && typeof reasonToUse === 'object') {
+                              // Обрабатываем pgtype.Text формат: {String: "...", Valid: true}
+                              // Проверяем Valid, если оно false, то данных нет
+                              if (reasonToUse.Valid === false) {
+                                reasonStr = '';
+                              } else if (reasonToUse.String !== undefined && reasonToUse.String !== null && reasonToUse.String !== '') {
+                                reasonStr = reasonToUse.String;
+                              } else if (reasonToUse.string !== undefined && reasonToUse.string !== null && reasonToUse.string !== '') {
+                                reasonStr = reasonToUse.string;
+                              } else {
+                                // Если это объект, но нет явного поля String, пробуем найти строковое значение
+                                // Игнорируем поля Valid, ValidBool и другие служебные поля
+                                const stringValue = Object.entries(reasonToUse)
+                                  .filter(([key]) => !['Valid', 'ValidBool', 'Status', 'StatusCode'].includes(key))
+                                  .find(([, value]) => typeof value === 'string' && value.trim() !== '');
+                                if (stringValue) {
+                                  reasonStr = stringValue[1];
+                                }
+                              }
+                            }
+                          }
+                          
+                          console.log('Reason extracted:', { reasonStr, hasContent: !!(reasonStr && reasonStr.trim()), length: reasonStr ? reasonStr.length : 0 });
+                          
+                          // Если данных нет, не показываем блок
+                          if (!reasonStr || reasonStr.trim() === '') {
+                            console.log('Reason block not rendered: no content');
+                            return null;
+                          }
+                          
+                          return (
+                            <Accordion elevation={0} square sx={{ mb: 2, border: '1px solid var(--border-neutral-primary)', "&:before": { display: "none" } }}>
+                              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="fieldHeader">reason.md</Typography>
+                              </AccordionSummary>
+                              <AccordionDetails>
+                                <Box 
+                                  sx={{ 
+                                    p: 2, 
+                                    maxHeight: '400px',
+                                    overflow: 'auto',
+                                    backgroundColor: 'var(--surface-neutral-primary)',
+                                    '& h1': { fontSize: '1.5rem', fontWeight: 600, mb: 1, mt: 0 },
+                                    '& h2': { fontSize: '1.25rem', fontWeight: 600, mb: 1, mt: 1 },
+                                    '& h3': { fontSize: '1.1rem', fontWeight: 600, mb: 0.5, mt: 1 },
+                                    '& strong': { fontWeight: 600 },
+                                    '& em': { fontStyle: 'italic' },
+                                    '& code': { 
+                                      fontFamily: 'monospace', 
+                                      backgroundColor: 'var(--surface-neutral-secondary)',
+                                      padding: '2px 4px',
+                                      borderRadius: '2px',
+                                      fontSize: '0.9em'
+                                    },
+                                    '& pre': {
+                                      backgroundColor: 'var(--surface-neutral-secondary)',
+                                      padding: '12px',
+                                      borderRadius: '4px',
+                                      overflow: 'auto',
+                                      fontSize: '0.9em',
+                                      '& code': {
+                                        backgroundColor: 'transparent',
+                                        padding: 0
+                                      }
+                                    },
+                                    '& a': { color: 'var(--text-link)', textDecoration: 'none' },
+                                    '& a:hover': { textDecoration: 'underline' }
+                                  }}
+                                  dangerouslySetInnerHTML={{ __html: renderMarkdown(reasonStr) }}
+                                />
+                              </AccordionDetails>
+                            </Accordion>
+                          );
+                        })()}
+
                         {/* Аккордион для test.json */}
-                  {item.TestCases && item.TestCases.length > 0 && (() => {
-                    const testDataRaw = item.TestCases[0]?.Test;
+                  {testCaseToUse && (() => {
+                    const testDataRaw = testCaseToUse?.Test;
                     let testDataStr = '';
                     if (testDataRaw) {
                       if (typeof testDataRaw === 'string') {
@@ -1734,12 +2228,19 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                       if (value === null || value === undefined) return '';
                       if (typeof value === 'object') {
                         if (Array.isArray(value)) {
-                          // Если массив объектов, пытаемся извлечь значения
+                          // Для массивов показываем все элементы
+                          if (value.length === 0) return '[]';
+                          // Если массив объектов, форматируем каждый элемент
                           if (value.length > 0 && typeof value[0] === 'object') {
-                            // Если это массив объектов, пробуем найти общие поля или просто показываем количество
-                            return `[${value.length} элементов]`;
+                            return value.map((v, idx) => {
+                              if (v === null || v === undefined) return 'null';
+                              const objKeys = Object.keys(v);
+                              if (objKeys.length === 0) return '{}';
+                              const simpleValues = objKeys.map(k => `${k}: ${v[k]}`).join(', ');
+                              return simpleValues.length < 150 ? `{${simpleValues}}` : JSON.stringify(v);
+                            }).join(', ');
                           }
-                          return value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(',');
+                          return value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
                         }
                         // Для объектов пытаемся найти простые значения
                         const objKeys = Object.keys(value);
@@ -1785,11 +2286,7 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                             <TableBody>
                               {operations.map((operation, idx) => {
                                 if (!operation || typeof operation !== 'object') return null;
-                                
-                                // Определяем тип операции
-                                // Возможно, структура такая: { "MKDIR": { path: "...", mode: "..." } }
-                                // или { "SETXATTR": { path: "...", name: "..." } }
-                                // Т.е. название операции - это ключ объекта
+
                                 
                                 let opType = null;
                                 let operationParams = operation;
@@ -1863,29 +2360,78 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                       return !excludeFields.includes(key) && !knownOps.includes(key.toUpperCase()) && !knownOps.includes(key);
                                     });
                                 
+                                const testCollapseKey = `test-${itemId}-${idx}`;
+                                const isTestCollapsed = collapsedOps[testCollapseKey] !== undefined ? collapsedOps[testCollapseKey] : true;
+                                
                                 return (
                                   <React.Fragment key={`op-${idx}`}>
                                     {/* Строка с названием операции */}
-                                    <TableRow>
-                                      <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: 'var(--surface-neutral-secondary)', pt: 1.5, pb: 1 }}>
-                                        {opType}
+                                    <TableRow 
+                                      onClick={() => {
+                                        setCollapsedOps(prev => ({
+                                          ...prev,
+                                          [testCollapseKey]: !prev[testCollapseKey]
+                                        }));
+                                      }}
+                                      sx={{ 
+                                        cursor: 'pointer',
+                                        '&:hover': { backgroundColor: 'var(--surface-neutral-secondary)' }
+                                      }}
+                                    >
+                                      <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: 'var(--surface-neutral-secondary)', pt: 1.5, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        {isTestCollapsed ? '▶' : '▼'} {opType}
                                       </TableCell>
                                     </TableRow>
                                     {/* Строки с параметрами */}
-                                    {params.length > 0 ? (
+                                    {!isTestCollapsed && params.length > 0 ? (
                                       params.map((paramKey) => {
                                         const paramValue = operationParams && typeof operationParams === 'object' 
                                           ? operationParams[paramKey] 
                                           : operation[paramKey];
+                                        if (Array.isArray(paramValue)) {
+                                          return (
+                                            <React.Fragment key={`op-${idx}-param-${paramKey}`}>
+                                              <TableRow>
+                                                <TableCell sx={{ width: '200px', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                <TableCell sx={{ fontFamily: 'monospace' }}></TableCell>
+                                              </TableRow>
+                                              {paramValue.map((item, arrIdx) => {
+                                                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                                                  const itemKeys = Object.keys(item);
+                                                  return (
+                                                    <React.Fragment key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`}>
+                                                      {itemKeys.map((itemKey) => (
+                                                        <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}-${itemKey}`}>
+                                                          <TableCell sx={{ width: '200px', fontWeight: 500, pl: 6 }}>{itemKey}</TableCell>
+                                                          <TableCell sx={{ fontFamily: 'monospace' }}>{formatParamValue(item[itemKey])}</TableCell>
+                                                        </TableRow>
+                                                      ))}
+                                                    </React.Fragment>
+                                                  );
+                                                }
+                                                return (
+                                                  <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`}>
+                                                    <TableCell sx={{ width: '200px', fontWeight: 500, pl: 6 }}></TableCell>
+                                                    <TableCell sx={{ fontFamily: 'monospace' }}>{formatParamValue(item)}</TableCell>
+                                                  </TableRow>
+                                                );
+                                              })}
+                                            </React.Fragment>
+                                          );
+                                        }
                                         // Если значение - объект, разворачиваем его в отдельные строки
                                         if (paramValue && typeof paramValue === 'object' && !Array.isArray(paramValue)) {
                                           const subParams = Object.keys(paramValue);
                                           if (subParams.length > 0) {
                                             return (
                                               <React.Fragment key={`op-${idx}-param-${paramKey}`}>
+                                                <TableRow>
+                                                  <TableCell sx={{ width: '200px', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                  <TableCell sx={{ fontFamily: 'monospace' }}></TableCell>
+                                                </TableRow>
                                                 {subParams.map((subKey) => (
                                                   <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`}>
-                                                    <TableCell sx={{ width: '200px', fontWeight: 500, pl: 4 }}>{subKey}</TableCell>
+                                                    <TableCell sx={{ width: '200px', fontWeight: 500, pl: 6 }}>{subKey}</TableCell>
                                                     <TableCell sx={{ fontFamily: 'monospace' }}>{formatParamValue(paramValue[subKey])}</TableCell>
                                                   </TableRow>
                                                 ))}
@@ -1902,9 +2448,6 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                       })
                                     ) : (
                                       <TableRow>
-                                        <TableCell colSpan={2} sx={{ color: 'var(--text-neutral-secondary)', fontStyle: 'italic' }}>
-                                          Нет параметров
-                                        </TableCell>
                                       </TableRow>
                                     )}
                                   </React.Fragment>
@@ -1961,9 +2504,37 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                               renderTableView()
                             ) : (
                               <Box sx={{ maxHeight: '400px', overflow: 'auto' }}>
-                                <pre style={{ margin: 0, padding: '1em', backgroundColor: 'var(--surface-neutral-secondary)', borderRadius: '4px', fontSize: '0.875rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                  {testDataStr || 'Нет данных'}
-                                </pre>
+                                <Box
+                                  component="pre"
+                                  sx={{
+                                    margin: 0,
+                                    padding: '1em',
+                                    backgroundColor: 'var(--surface-neutral-secondary)',
+                                    borderRadius: '4px',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'monospace',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    '& .json-key': { 
+                                      color: themeMode === 'dark' ? '#9cdcfe' : '#0066cc', 
+                                      fontWeight: 500 
+                                    },
+                                    '& .json-string': { 
+                                      color: themeMode === 'dark' ? '#ce9178' : '#008000' 
+                                    },
+                                    '& .json-number': { 
+                                      color: themeMode === 'dark' ? '#b5cea8' : '#098658' 
+                                    },
+                                    '& .json-literal': { 
+                                      color: themeMode === 'dark' ? '#569cd6' : '#0451a5', 
+                                      fontStyle: 'italic' 
+                                    },
+                                    '& .json-value': { color: 'inherit' }
+                                  }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: testDataStr ? highlightJSON(testDataStr) : 'Нет данных'
+                                  }}
+                                />
                               </Box>
                             )}
                           </AccordionDetails>
@@ -2103,9 +2674,13 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                                   if (subParams.length > 0) {
                                                     return (
                                                       <React.Fragment key={`op-${idx}-param-${paramKey}`}>
+                                                        <TableRow>
+                                                          <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                          <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}></TableCell>
+                                                        </TableRow>
                                                         {subParams.map((subKey) => (
                                                           <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`}>
-                                                            <TableCell sx={{ width: '20%', fontWeight: 500, pl: 4 }}>{subKey}</TableCell>
+                                                            <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>{subKey}</TableCell>
                                                             <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(paramValue[subKey])}</TableCell>
                                                           </TableRow>
                                                         ))}
@@ -2122,9 +2697,6 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                               })
                                             ) : (
                                               <TableRow>
-                                                <TableCell colSpan={2} sx={{ color: 'var(--text-neutral-secondary)', fontStyle: 'italic' }}>
-                                                  Нет параметров
-                                                </TableCell>
                                               </TableRow>
                                             )}
                                           </React.Fragment>
@@ -2287,18 +2859,16 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                 </Box>
 
                                 {(() => {
-                                  const tc0 = item.TestCases[0];
-
                                   let leftRaw = "";
                                   let rightRaw = "";
 
                                   if (currentKind === "trace") {
                                     const fsLeft = getFsSummary(
-                                      tc0,
+                                      testCaseToUse,
                                       selectedFsTrace.left || availableFsList[0]
                                     );
                                     const fsRight = getFsSummary(
-                                      tc0,
+                                      testCaseToUse,
                                       selectedFsTrace.right || selectedFsTrace.left || availableFsList[0]
                                     );
                                     const traceLeft = getTraceData(fsLeft);
@@ -2309,8 +2879,8 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                     const fsLeftName = selectedFsStdout.left || availableFsList[0];
                                     const fsRightName = selectedFsStdout.right || selectedFsStdout.left || availableFsList[0];
                                     
-                                    const fsLeft = getFsSummary(tc0, fsLeftName);
-                                    const fsRight = getFsSummary(tc0, fsRightName);
+                                    const fsLeft = getFsSummary(testCaseToUse, fsLeftName);
+                                    const fsRight = getFsSummary(testCaseToUse, fsRightName);
                                     
                                     if (fsLeft) {
                                       const stdout = fsLeft.stdout || fsLeft.Stdout;
@@ -2329,8 +2899,8 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                     const fsLeftName = selectedFsStderr.left || availableFsList[0];
                                     const fsRightName = selectedFsStderr.right || selectedFsStderr.left || availableFsList[0];
                                     
-                                    const fsLeft = getFsSummary(tc0, fsLeftName);
-                                    const fsRight = getFsSummary(tc0, fsRightName);
+                                    const fsLeft = getFsSummary(testCaseToUse, fsLeftName);
+                                    const fsRight = getFsSummary(testCaseToUse, fsRightName);
                                     
                                     if (fsLeft) {
                                       const stderr = fsLeft.stderr || fsLeft.Stderr;
@@ -2350,27 +2920,20 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                   let leftText = normalizeForDiff(leftRaw);
                                   let rightText = normalizeForDiff(rightRaw);
                                   
+                                  // Определяем, является ли содержимое JSON (для подсветки синтаксиса)
+                                  const isJSON = currentKind === "trace" || 
+                                    (leftText.trim().startsWith('{') || leftText.trim().startsWith('[')) ||
+                                    (rightText.trim().startsWith('{') || rightText.trim().startsWith('['));
+                                  
                                   // Нормализуем количество строк для правильного выравнивания в diff
                                   // Убираем trailing newlines перед подсчетом
                                   const leftTrimmed = leftText.replace(/\n+$/, '');
                                   const rightTrimmed = rightText.replace(/\n+$/, '');
                                   
-                                  const leftLines = leftTrimmed.split('\n').length;
-                                  const rightLines = rightTrimmed.split('\n').length;
-                                  const maxLines = Math.max(leftLines, rightLines);
-                                  
-                                  // Добавляем пустые строки в конец, чтобы выровнять количество строк
-                                  if (leftLines < maxLines) {
-                                    leftText = leftTrimmed + '\n'.repeat(maxLines - leftLines);
-                                  } else {
-                                    leftText = leftTrimmed;
-                                  }
-                                  
-                                  if (rightLines < maxLines) {
-                                    rightText = rightTrimmed + '\n'.repeat(maxLines - rightLines);
-                                  } else {
-                                    rightText = rightTrimmed;
-                                  }
+                                  // Не добавляем пустые строки в конец - это мешает правильному выравниванию
+                                  // Вместо этого используем CSS для фиксированной высоты строк
+                                  leftText = leftTrimmed;
+                                  rightText = rightTrimmed;
 
                                   // Проверяем, нужно ли показывать табличный вид для JSON файлов
                                   const bugId = item.ID || item.id || 'unknown';
@@ -2399,17 +2962,100 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                       console.error("Error parsing right JSON:", e);
                                     }
                                     
-                                    // Функция для рендеринга таблицы из JSON
-                                    const renderJsonTable = (parsed, label) => {
-                                      if (!parsed) {
-                                        return (
-                                          <Box sx={{ p: 2, color: 'var(--text-neutral-secondary)' }}>
-                                            {label}: Нет данных
-                                          </Box>
-                                        );
+                                    // Функция для нормализации операции для сравнения
+                                    const normalizeOperation = (operation) => {
+                                      if (!operation || typeof operation !== 'object') return null;
+                                      try {
+                                        return JSON.stringify(operation);
+                                      } catch (e) {
+                                        return String(operation);
+                                      }
+                                    };
+                                    
+                                    // Функция для проверки различий в параметрах операции
+                                    const hasParamDifferences = (leftOp, rightOp) => {
+                                      if (!leftOp || !rightOp) return false;
+                                      
+                                      const { operationParams: leftParams } = extractOperation(leftOp);
+                                      const { operationParams: rightParams } = extractOperation(rightOp);
+                                      
+                                      if (!leftParams || !rightParams) return false;
+                                      
+                                      const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                                      const leftKeys = Object.keys(leftParams).filter(key => !excludeFields.includes(key));
+                                      const rightKeys = Object.keys(rightParams).filter(key => !excludeFields.includes(key));
+                                      
+                                      // Проверяем, есть ли различия в ключах
+                                      if (leftKeys.length !== rightKeys.length) return true;
+                                      
+                                      // Проверяем каждый параметр
+                                      for (const key of leftKeys) {
+                                        const leftVal = leftParams[key];
+                                        const rightVal = rightParams[key];
+                                        const paramStatus = getParamDiffStatus(leftVal, rightVal);
+                                        if (paramStatus !== 'unchanged') return true;
                                       }
                                       
-                                      // Для trace.json структура: { rows: [...] }
+                                      return false;
+                                    };
+                                    
+                                    // Функция для определения статуса различия
+                                    const getDiffStatus = (leftOp, rightOp, opIdx) => {
+                                      if (!leftOp && rightOp) return 'added';
+                                      if (leftOp && !rightOp) return 'removed';
+                                      if (!leftOp && !rightOp) return 'unchanged';
+                                      
+                                      // Проверяем тип операции
+                                      const { opType: leftType } = extractOperation(leftOp);
+                                      const { opType: rightType } = extractOperation(rightOp);
+                                      
+                                      if (leftType !== rightType) return 'modified';
+                                      
+                                      // Если тип одинаковый, проверяем параметры
+                                      if (hasParamDifferences(leftOp, rightOp)) return 'modified';
+                                      
+                                      return 'unchanged';
+                                    };
+                                    
+                                    // Функция для получения статуса параметра
+                                    const getParamDiffStatus = (leftVal, rightVal) => {
+                                      if (leftVal === undefined && rightVal !== undefined) return 'added';
+                                      if (leftVal !== undefined && rightVal === undefined) return 'removed';
+                                      if (leftVal === undefined && rightVal === undefined) return 'unchanged';
+                                      
+                                      const leftNorm = JSON.stringify(leftVal);
+                                      const rightNorm = JSON.stringify(rightVal);
+                                      
+                                      if (leftNorm === rightNorm) return 'unchanged';
+                                      return 'modified';
+                                    };
+                                    
+                                    // Функция для получения цвета фона в зависимости от статуса и стороны
+                                    const getBackgroundColor = (status, side) => {
+                                      if (status === 'added') {
+                                        return side === 'left' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.15)';
+                                      }
+                                      if (status === 'removed') {
+                                        return side === 'left' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+                                      }
+                                      if (status === 'modified') {
+                                        return side === 'left' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+                                      }
+                                      return 'transparent';
+                                    };
+                                    
+                                    const collapseKey = `${bugId}-${currentKind}`;
+                                    const toggleCollapse = (opIdx) => {
+                                      const key = `${collapseKey}-${opIdx}`;
+                                      setCollapsedOps(prev => ({
+                                        ...prev,
+                                        [key]: !prev[key]
+                                      }));
+                                    };
+                                    
+                                    // Подготовка операций для сравнения
+                                    const getOperations = (parsed) => {
+                                      if (!parsed) return [];
                                       let operations = null;
                                       if (parsed.rows && Array.isArray(parsed.rows)) {
                                         operations = parsed.rows;
@@ -2420,120 +3066,234 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                       } else {
                                         operations = [parsed];
                                       }
+                                      return operations || [];
+                                    };
+                                    
+                                    const leftOps = getOperations(leftParsed);
+                                    const rightOps = getOperations(rightParsed);
+                                    const maxOps = Math.max(leftOps.length, rightOps.length);
+                                    
+                                    const knownOps = [
+                                      'MKDIR', 'OPEN', 'CREATE', 'CLOSE', 'READ', 'WRITE', 'PREAD', 'PWRITE',
+                                      'LSEEK', 'TRUNCATE', 'FTRUNCATE', 'RENAME', 'UNLINK', 'SYMLINK', 'HARDLINK',
+                                      'CHMOD', 'FCHMOD', 'CHMODAT', 'FCHMODAT', 'MKDIRAT',
+                                      'SETXATTR', 'GETXATTR', 'LISTXATTR', 'REMOVEXATTR',
+                                      'FSYNC', 'FSTAT', 'STAT', 'FSTATAT', 'LINKAT', 'HARDLINKAT'
+                                    ];
+                                    
+                                    // Функция для извлечения типа операции и параметров
+                                    const extractOperation = (operation) => {
+                                      if (!operation || typeof operation !== 'object') return { opType: null, operationParams: null };
                                       
-                                      if (!operations || operations.length === 0) {
-                                        return (
-                                          <Box sx={{ p: 2, color: 'var(--text-neutral-secondary)' }}>
-                                            {label}: Нет данных
-                                          </Box>
-                                        );
+                                      let opType = null;
+                                      let operationParams = null;
+                                      
+                                      if (operation.Success) {
+                                        opType = operation.Success.operation || 'SUCCESS';
+                                        operationParams = operation.Success;
+                                      } else if (operation.Failure) {
+                                        opType = operation.Failure.operation || 'FAILURE';
+                                        operationParams = operation.Failure;
+                                      } else {
+                                        const keys = Object.keys(operation);
+                                        const foundOpKey = keys.find(key => knownOps.includes(key.toUpperCase()) || knownOps.includes(key));
+                                        
+                                        if (foundOpKey) {
+                                          opType = foundOpKey;
+                                          operationParams = operation[foundOpKey] || {};
+                                        } else {
+                                          opType = 'UNKNOWN';
+                                          operationParams = operation;
+                                        }
                                       }
                                       
-                                      const knownOps = [
-                                        'MKDIR', 'OPEN', 'CREATE', 'CLOSE', 'READ', 'WRITE', 'PREAD', 'PWRITE',
-                                        'LSEEK', 'TRUNCATE', 'FTRUNCATE', 'RENAME', 'UNLINK', 'SYMLINK', 'HARDLINK',
-                                        'CHMOD', 'FCHMOD', 'CHMODAT', 'FCHMODAT', 'MKDIRAT',
-                                        'SETXATTR', 'GETXATTR', 'LISTXATTR', 'REMOVEXATTR',
-                                        'FSYNC', 'FSTAT', 'STAT', 'FSTATAT', 'LINKAT', 'HARDLINKAT'
-                                      ];
-                                      
-                                      // Функция для отображения значения параметра
-                                      const formatParamValue = (value) => {
-                                        if (value === null || value === undefined) return '';
-                                        if (typeof value === 'object') {
-                                          if (Array.isArray(value)) {
-                                            if (value.length > 0 && typeof value[0] === 'object') {
-                                              return `[${value.length} элементов]`;
-                                            }
-                                            return value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(',');
+                                      return { opType, operationParams };
+                                    };
+                                    
+                                    // Функция для отображения значения параметра
+                                    const formatParamValue = (value) => {
+                                      if (value === null || value === undefined) return '';
+                                      if (typeof value === 'object') {
+                                        if (Array.isArray(value)) {
+                                          if (value.length === 0) return '[]';
+                                          if (value.length > 0 && typeof value[0] === 'object') {
+                                            return value.map((v, idx) => {
+                                              if (v === null || v === undefined) return 'null';
+                                              const objKeys = Object.keys(v);
+                                              if (objKeys.length === 0) return '{}';
+                                              const simpleValues = objKeys.map(k => `${k}: ${v[k]}`).join(', ');
+                                              return simpleValues.length < 150 ? `{${simpleValues}}` : JSON.stringify(v);
+                                            }).join(', ');
                                           }
-                                          const objKeys = Object.keys(value);
-                                          if (objKeys.length === 0) return '{}';
-                                          const simpleValues = objKeys.map(k => `${k}: ${value[k]}`).join(', ');
-                                          if (simpleValues.length < 100) {
-                                            return simpleValues;
-                                          }
-                                          return JSON.stringify(value);
+                                          return value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(',');
                                         }
-                                        return String(value);
-                                      };
+                                        const objKeys = Object.keys(value);
+                                        if (objKeys.length === 0) return '{}';
+                                        const simpleValues = objKeys.map(k => `${k}: ${value[k]}`).join(', ');
+                                        if (simpleValues.length < 100) {
+                                          return simpleValues;
+                                        }
+                                        return JSON.stringify(value);
+                                      }
+                                      return String(value);
+                                    };
+                                    
+                                    // Функция для рендеринга одной таблицы
+                                    const renderJsonTable = (operations, side, maxOps) => {
+                                      const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                                      let lineNumber = 1;
                                       
                                       return (
                                         <Table size="small" sx={{ width: '100%', '& .MuiTableCell-root': { borderBottom: '1px solid var(--border-neutral-primary)', fontSize: '0.875rem' } }}>
                                           <colgroup>
+                                            <col style={{ width: '50px' }} />
                                             <col style={{ width: '20%' }} />
                                             <col style={{ width: '80%' }} />
                                           </colgroup>
                                           <TableBody>
-                                            {operations.map((operation, idx) => {
-                                              if (!operation || typeof operation !== 'object') return null;
+                                            {Array.from({ length: maxOps }, (_, idx) => {
+                                              const operation = operations[idx];
+                                              const otherOperation = side === 'left' ? rightOps[idx] : leftOps[idx];
+                                              const opStatus = getDiffStatus(operation, otherOperation, idx);
+                                              const collapseKeyFull = `${collapseKey}-${idx}`;
+                                              const isCollapsed = collapsedOps[collapseKeyFull] !== undefined ? collapsedOps[collapseKeyFull] : true;
                                               
-                                              let opType = null;
-                                              let operationParams = null;
-                                              
-                                              // Для trace.json структура: { Success: { operation: "...", ... } } или { Failure: { operation: "...", ... } }
-                                              if (operation.Success) {
-                                                opType = operation.Success.operation || 'SUCCESS';
-                                                operationParams = operation.Success;
-                                              } else if (operation.Failure) {
-                                                opType = operation.Failure.operation || 'FAILURE';
-                                                operationParams = operation.Failure;
-                                              } else {
-                                                // Пробуем найти операцию по ключу
-                                                const keys = Object.keys(operation);
-                                                const foundOpKey = keys.find(key => knownOps.includes(key.toUpperCase()) || knownOps.includes(key));
-                                                
-                                                if (foundOpKey) {
-                                                  opType = foundOpKey;
-                                                  operationParams = operation[foundOpKey] || {};
-                                                } else {
-                                                  opType = 'UNKNOWN';
-                                                  operationParams = operation;
-                                                }
+                                              if (!operation) {
+                                                const emptyLineNum = lineNumber++;
+                                                return (
+                                                  <React.Fragment key={`empty-${idx}`}>
+                                                    <TableRow>
+                                                      <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(opStatus, side) }}>
+                                                        {emptyLineNum}
+                                                      </TableCell>
+                                                      <TableCell colSpan={2} sx={{ height: '40px', backgroundColor: getBackgroundColor(opStatus, side) }}></TableCell>
+                                                    </TableRow>
+                                                  </React.Fragment>
+                                                );
                                               }
                                               
-                                              // Извлекаем параметры, исключая служебные поля
-                                              const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                                              const { opType, operationParams } = extractOperation(operation);
                                               const params = operationParams && typeof operationParams === 'object' 
                                                 ? Object.keys(operationParams).filter(key => !excludeFields.includes(key))
                                                 : [];
                                               
+                                              const opLineNum = lineNumber++;
+                                              
+                                              // Подсвечиваем только если операция действительно отличается
+                                              const shouldHighlight = opStatus !== 'unchanged';
+                                              
                                               return (
                                                 <React.Fragment key={`op-${idx}`}>
-                                                  <TableRow>
-                                                    <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: 'var(--surface-neutral-secondary)', pt: 1.5, pb: 1 }}>
-                                                      {opType}
+                                                  <TableRow 
+                                                    onClick={() => toggleCollapse(idx)}
+                                                    sx={{ 
+                                                      cursor: 'pointer',
+                                                      '&:hover': { backgroundColor: 'var(--surface-neutral-secondary)' }
+                                                    }}
+                                                  >
+                                                    <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: shouldHighlight ? getBackgroundColor(opStatus, side) : 'transparent' }}>
+                                                      {opLineNum}
+                                                    </TableCell>
+                                                    <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: shouldHighlight ? getBackgroundColor(opStatus, side) : 'transparent', pt: 1.5, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                      {isCollapsed ? '▶' : '▼'} {opType || 'N/A'}
                                                     </TableCell>
                                                   </TableRow>
-                                                  {params.length > 0 ? (
+                                                  {!isCollapsed && params.length > 0 ? (
                                                     params.map((paramKey) => {
                                                       const paramValue = operationParams[paramKey];
+                                                      const otherParamValue = otherOperation ? (extractOperation(otherOperation).operationParams || {})[paramKey] : undefined;
+                                                      const paramStatus = getParamDiffStatus(paramValue, otherParamValue);
+                                                      const paramLineNum = lineNumber++;
+                                                      
+                                                      if (Array.isArray(paramValue)) {
+                                                        return (
+                                                          <React.Fragment key={`op-${idx}-param-${paramKey}`}>
+                                                            <TableRow sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                              <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                {paramLineNum}
+                                                              </TableCell>
+                                                              <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                              <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>[{paramValue.length} элементов]</TableCell>
+                                                            </TableRow>
+                                                            {paramValue.map((item, arrIdx) => {
+                                                              if (item && typeof item === 'object' && !Array.isArray(item)) {
+                                                                const itemKeys = Object.keys(item);
+                                                                return (
+                                                                  <React.Fragment key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`}>
+                                                                    {itemKeys.map((itemKey) => {
+                                                                      const itemLineNum = lineNumber++;
+                                                                      return (
+                                                                        <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}-${itemKey}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                          <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                            {itemLineNum}
+                                                                          </TableCell>
+                                                                          <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>{itemKey}</TableCell>
+                                                                          <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(item[itemKey])}</TableCell>
+                                                                        </TableRow>
+                                                                      );
+                                                                    })}
+                                                                  </React.Fragment>
+                                                                );
+                                                              }
+                                                              const itemLineNum = lineNumber++;
+                                                              return (
+                                                                <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                  <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                    {itemLineNum}
+                                                                  </TableCell>
+                                                                  <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>[{arrIdx}]</TableCell>
+                                                                  <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(item)}</TableCell>
+                                                                </TableRow>
+                                                              );
+                                                            })}
+                                                          </React.Fragment>
+                                                        );
+                                                      }
                                                       if (paramValue && typeof paramValue === 'object' && !Array.isArray(paramValue)) {
                                                         const subParams = Object.keys(paramValue);
                                                         if (subParams.length > 0) {
                                                           return (
                                                             <React.Fragment key={`op-${idx}-param-${paramKey}`}>
-                                                              {subParams.map((subKey) => (
-                                                                <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`}>
-                                                                  <TableCell sx={{ width: '20%', fontWeight: 500, pl: 4 }}>{subKey}</TableCell>
-                                                                  <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(paramValue[subKey])}</TableCell>
-                                                                </TableRow>
-                                                              ))}
+                                                              <TableRow sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                  {paramLineNum}
+                                                                </TableCell>
+                                                                <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                                <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}></TableCell>
+                                                              </TableRow>
+                                                              {subParams.map((subKey) => {
+                                                                const subValue = paramValue[subKey];
+                                                                const otherSubValue = otherParamValue && typeof otherParamValue === 'object' && !Array.isArray(otherParamValue) ? otherParamValue[subKey] : undefined;
+                                                                const subStatus = getParamDiffStatus(subValue, otherSubValue);
+                                                                const subLineNum = lineNumber++;
+                                                                return (
+                                                                  <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`} sx={{ backgroundColor: getBackgroundColor(subStatus, side) }}>
+                                                                    <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(subStatus, side) }}>
+                                                                      {subLineNum}
+                                                                    </TableCell>
+                                                                    <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>{subKey}</TableCell>
+                                                                    <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(subValue)}</TableCell>
+                                                                  </TableRow>
+                                                                );
+                                                              })}
                                                             </React.Fragment>
                                                           );
                                                         }
                                                       }
                                                       return (
-                                                        <TableRow key={`op-${idx}-param-${paramKey}`}>
+                                                        <TableRow key={`op-${idx}-param-${paramKey}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                          <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                            {paramLineNum}
+                                                          </TableCell>
                                                           <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
                                                           <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(paramValue)}</TableCell>
                                                         </TableRow>
                                                       );
                                                     })
-                                                  ) : (
+                                                  ) : !isCollapsed && (
                                                     <TableRow>
-                                                      <TableCell colSpan={2} sx={{ color: 'var(--text-neutral-secondary)', fontStyle: 'italic' }}>
-                                                        Нет параметров
+                                                      <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2 }}>
+                                                        {lineNumber++}
                                                       </TableCell>
                                                     </TableRow>
                                                   )}
@@ -2546,19 +3306,19 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                     };
                                     
                                     return (
-                                      <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-                                        <Box>
+                                      <Box sx={{ display: 'flex', gap: 2, flexDirection: 'row', overflowX: 'auto' }}>
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
                                           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                                             {selectedFsTrace.left || availableFsList[0]}
                                           </Typography>
-                                          {renderJsonTable(leftParsed, 'Слева')}
+                                          {renderJsonTable(leftOps, 'left', maxOps)}
                                         </Box>
                                         {selectedFsTrace.right && selectedFsTrace.right !== selectedFsTrace.left && (
-                                          <Box>
+                                          <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                                               {selectedFsTrace.right}
                                             </Typography>
-                                            {renderJsonTable(rightParsed, 'Справа')}
+                                            {renderJsonTable(rightOps, 'right', maxOps)}
                                           </Box>
                                         )}
                                       </Box>
@@ -2573,13 +3333,32 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                     );
                                   }
 
-                                  return (
-                                    <Box>
-                                      {parseDiff(formpatch(leftText, rightText)).map(
-                                        renderFile
-                                      )}
-                                    </Box>
-                                  );
+                                  try {
+                                    const patch = formpatch(leftText, rightText);
+                                    const parsed = parseDiff(patch);
+                                    if (!parsed || parsed.length === 0) {
+                                      return (
+                                        <Box sx={{ p: 2, color: "var(--text-neutral-secondary)" }}>
+                                          Ошибка при формировании diff
+                                        </Box>
+                                      );
+                                    }
+                                    return (
+                                      <DiffViewWithHighlight 
+                                        parsed={parsed} 
+                                        isJSON={isJSON} 
+                                        highlightJSON={highlightJSON} 
+                                        themeMode={themeMode}
+                                      />
+                                    );
+                                  } catch (error) {
+                                    console.error("Error parsing diff:", error);
+                                    return (
+                                      <Box sx={{ p: 2, color: "var(--text-neutral-secondary)" }}>
+                                        Ошибка при отображении diff: {error.message}
+                                      </Box>
+                                    );
+                                  }
                                 })()}
                               </Stack>
                             </AccordionDetails>
@@ -2587,7 +3366,7 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                         )}
                         
                         {/* Полноэкранный диалог для таблицы diff */}
-                        {item.TestCases && item.TestCases.length > 0 && availableFsList.length >= 1 && (() => {
+                        {testCaseToUse && availableFsList.length >= 1 && (() => {
                             const isJsonFile = currentKind === "trace";
                             if (!isJsonFile) return null;
                             
@@ -2598,12 +3377,11 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                             
                             if (diffViewMode !== 'table') return null;
                             
-                            const tc0 = item.TestCases[0];
                             let leftRaw = "";
                             let rightRaw = "";
                             
-                            const fsLeft = getFsSummary(tc0, selectedFsTrace.left || availableFsList[0]);
-                            const fsRight = getFsSummary(tc0, selectedFsTrace.right || selectedFsTrace.left || availableFsList[0]);
+                            const fsLeft = getFsSummary(testCaseToUse, selectedFsTrace.left || availableFsList[0]);
+                            const fsRight = getFsSummary(testCaseToUse, selectedFsTrace.right || selectedFsTrace.left || availableFsList[0]);
                             const traceLeft = getTraceData(fsLeft);
                             const traceRight = getTraceData(fsRight);
                             leftRaw = traceLeft || "";
@@ -2633,8 +3411,17 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                               if (value === null || value === undefined) return '';
                               if (typeof value === 'object') {
                                 if (Array.isArray(value)) {
+                                  // Для массивов показываем все элементы
+                                  if (value.length === 0) return '[]';
+                                  // Если массив объектов, форматируем каждый элемент
                                   if (value.length > 0 && typeof value[0] === 'object') {
-                                    return `[${value.length} элементов]`;
+                                    return value.map((v, idx) => {
+                                      if (v === null || v === undefined) return 'null';
+                                      const objKeys = Object.keys(v);
+                                      if (objKeys.length === 0) return '{}';
+                                      const simpleValues = objKeys.map(k => `${k}: ${v[k]}`).join(', ');
+                                      return simpleValues.length < 150 ? `{${simpleValues}}` : JSON.stringify(v);
+                                    }).join(', ');
                                   }
                                   return value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(',');
                                 }
@@ -2649,15 +3436,96 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                               return String(value);
                             };
                             
-                            const renderJsonTable = (parsed, label) => {
-                              if (!parsed) {
-                                return (
-                                  <Box sx={{ p: 2, color: 'var(--text-neutral-secondary)' }}>
-                                    {label}: Нет данных
-                                  </Box>
-                                );
+                            // Используем ту же логику сравнения, что и в основном отображении
+                            const normalizeOperation = (operation) => {
+                              if (!operation || typeof operation !== 'object') return null;
+                              try {
+                                return JSON.stringify(operation);
+                              } catch (e) {
+                                return String(operation);
+                              }
+                            };
+                            
+                            // Функция для проверки различий в параметрах операции
+                            const hasParamDifferences = (leftOp, rightOp) => {
+                              if (!leftOp || !rightOp) return false;
+                              
+                              const { operationParams: leftParams } = extractOperation(leftOp);
+                              const { operationParams: rightParams } = extractOperation(rightOp);
+                              
+                              if (!leftParams || !rightParams) return false;
+                              
+                              const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                              const leftKeys = Object.keys(leftParams).filter(key => !excludeFields.includes(key));
+                              const rightKeys = Object.keys(rightParams).filter(key => !excludeFields.includes(key));
+                              
+                              // Проверяем, есть ли различия в ключах
+                              if (leftKeys.length !== rightKeys.length) return true;
+                              
+                              // Проверяем каждый параметр
+                              for (const key of leftKeys) {
+                                const leftVal = leftParams[key];
+                                const rightVal = rightParams[key];
+                                const paramStatus = getParamDiffStatus(leftVal, rightVal);
+                                if (paramStatus !== 'unchanged') return true;
                               }
                               
+                              return false;
+                            };
+                            
+                            const getDiffStatus = (leftOp, rightOp, opIdx) => {
+                              if (!leftOp && rightOp) return 'added';
+                              if (leftOp && !rightOp) return 'removed';
+                              if (!leftOp && !rightOp) return 'unchanged';
+                              
+                              // Проверяем тип операции
+                              const { opType: leftType } = extractOperation(leftOp);
+                              const { opType: rightType } = extractOperation(rightOp);
+                              
+                              if (leftType !== rightType) return 'modified';
+                              
+                              // Если тип одинаковый, проверяем параметры
+                              if (hasParamDifferences(leftOp, rightOp)) return 'modified';
+                              
+                              return 'unchanged';
+                            };
+                            
+                            const getParamDiffStatus = (leftVal, rightVal) => {
+                              if (leftVal === undefined && rightVal !== undefined) return 'added';
+                              if (leftVal !== undefined && rightVal === undefined) return 'removed';
+                              if (leftVal === undefined && rightVal === undefined) return 'unchanged';
+                              
+                              const leftNorm = JSON.stringify(leftVal);
+                              const rightNorm = JSON.stringify(rightVal);
+                              
+                              if (leftNorm === rightNorm) return 'unchanged';
+                              return 'modified';
+                            };
+                            
+                            const getBackgroundColor = (status, side) => {
+                              if (status === 'added') {
+                                return side === 'left' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.15)';
+                              }
+                              if (status === 'removed') {
+                                return side === 'left' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+                              }
+                              if (status === 'modified') {
+                                return side === 'left' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+                              }
+                              return 'transparent';
+                            };
+                            
+                            const collapseKeyFullscreen = `${diffViewKey}-fullscreen`;
+                            const toggleCollapseFullscreen = (opIdx) => {
+                              const key = `${collapseKeyFullscreen}-${opIdx}`;
+                              setCollapsedOps(prev => ({
+                                ...prev,
+                                [key]: !prev[key]
+                              }));
+                            };
+                            
+                            const getOperations = (parsed) => {
+                              if (!parsed) return [];
                               let operations = null;
                               if (parsed.rows && Array.isArray(parsed.rows)) {
                                 operations = parsed.rows;
@@ -2668,101 +3536,204 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                               } else {
                                 operations = [parsed];
                               }
+                              return operations || [];
+                            };
+                            
+                            const leftOps = getOperations(leftParsed);
+                            const rightOps = getOperations(rightParsed);
+                            const maxOps = Math.max(leftOps.length, rightOps.length);
+                            
+                            const knownOps = [
+                              'MKDIR', 'OPEN', 'CREATE', 'CLOSE', 'READ', 'WRITE', 'PREAD', 'PWRITE',
+                              'LSEEK', 'TRUNCATE', 'FTRUNCATE', 'RENAME', 'UNLINK', 'SYMLINK', 'HARDLINK',
+                              'CHMOD', 'FCHMOD', 'CHMODAT', 'FCHMODAT', 'MKDIRAT',
+                              'SETXATTR', 'GETXATTR', 'LISTXATTR', 'REMOVEXATTR',
+                              'FSYNC', 'FSTAT', 'STAT', 'FSTATAT', 'LINKAT', 'HARDLINKAT'
+                            ];
+                            
+                            const extractOperation = (operation) => {
+                              if (!operation || typeof operation !== 'object') return { opType: null, operationParams: null };
                               
-                              if (!operations || operations.length === 0) {
-                                return (
-                                  <Box sx={{ p: 2, color: 'var(--text-neutral-secondary)' }}>
-                                    {label}: Нет данных
-                                  </Box>
-                                );
+                              let opType = null;
+                              let operationParams = null;
+                              
+                              if (operation.Success) {
+                                opType = operation.Success.operation || 'SUCCESS';
+                                operationParams = operation.Success;
+                              } else if (operation.Failure) {
+                                opType = operation.Failure.operation || 'FAILURE';
+                                operationParams = operation.Failure;
+                              } else {
+                                const keys = Object.keys(operation);
+                                const foundOpKey = keys.find(key => knownOps.includes(key.toUpperCase()) || knownOps.includes(key));
+                                
+                                if (foundOpKey) {
+                                  opType = foundOpKey;
+                                  operationParams = operation[foundOpKey] || {};
+                                } else {
+                                  opType = 'UNKNOWN';
+                                  operationParams = operation;
+                                }
                               }
                               
-                              const knownOps = [
-                                'MKDIR', 'OPEN', 'CREATE', 'CLOSE', 'READ', 'WRITE', 'PREAD', 'PWRITE',
-                                'LSEEK', 'TRUNCATE', 'FTRUNCATE', 'RENAME', 'UNLINK', 'SYMLINK', 'HARDLINK',
-                                'CHMOD', 'FCHMOD', 'CHMODAT', 'FCHMODAT', 'MKDIRAT',
-                                'SETXATTR', 'GETXATTR', 'LISTXATTR', 'REMOVEXATTR',
-                                'FSYNC', 'FSTAT', 'STAT', 'FSTATAT', 'LINKAT', 'HARDLINKAT'
-                              ];
+                              return { opType, operationParams };
+                            };
+                            
+                            const renderJsonTable = (operations, side, maxOps) => {
+                              const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                              let lineNumber = 1;
                               
                               return (
                                 <Table size="small" sx={{ width: '100%', '& .MuiTableCell-root': { borderBottom: '1px solid var(--border-neutral-primary)', fontSize: '0.875rem' } }}>
                                   <colgroup>
+                                    <col style={{ width: '50px' }} />
                                     <col style={{ width: '20%' }} />
                                     <col style={{ width: '80%' }} />
                                   </colgroup>
                                   <TableBody>
-                                    {operations.map((operation, idx) => {
-                                      if (!operation || typeof operation !== 'object') return null;
+                                    {Array.from({ length: maxOps }, (_, idx) => {
+                                      const operation = operations[idx];
+                                      const otherOperation = side === 'left' ? rightOps[idx] : leftOps[idx];
+                                      const opStatus = getDiffStatus(operation, otherOperation, idx);
+                                      const collapseKeyFull = `${collapseKeyFullscreen}-${idx}`;
+                                      const isCollapsed = collapsedOps[collapseKeyFull] !== undefined ? collapsedOps[collapseKeyFull] : true;
                                       
-                                      let opType = null;
-                                      let operationParams = null;
-                                      
-                                      // Для trace.json структура: { Success: { operation: "...", ... } } или { Failure: { operation: "...", ... } }
-                                      if (operation.Success) {
-                                        opType = operation.Success.operation || 'SUCCESS';
-                                        operationParams = operation.Success;
-                                      } else if (operation.Failure) {
-                                        opType = operation.Failure.operation || 'FAILURE';
-                                        operationParams = operation.Failure;
-                                      } else {
-                                        // Пробуем найти операцию по ключу
-                                        const keys = Object.keys(operation);
-                                        const foundOpKey = keys.find(key => knownOps.includes(key.toUpperCase()) || knownOps.includes(key));
-                                        
-                                        if (foundOpKey) {
-                                          opType = foundOpKey;
-                                          operationParams = operation[foundOpKey] || {};
-                                        } else {
-                                          opType = 'UNKNOWN';
-                                          operationParams = operation;
-                                        }
+                                      if (!operation) {
+                                        const emptyLineNum = lineNumber++;
+                                        return (
+                                          <React.Fragment key={`empty-${idx}`}>
+                                            <TableRow>
+                                              <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(opStatus, side) }}>
+                                                {emptyLineNum}
+                                              </TableCell>
+                                              <TableCell colSpan={2} sx={{ height: '40px', backgroundColor: getBackgroundColor(opStatus, side) }}></TableCell>
+                                            </TableRow>
+                                          </React.Fragment>
+                                        );
                                       }
                                       
-                                      // Извлекаем параметры, исключая служебные поля
-                                      const excludeFields = ['operation', 'Operation', 'type', 'Type', 'op', 'Op', 'Success', 'Failure', 'errno', 'strerror', 'subcall', 'return_code', 'execution_time'];
+                                      const { opType, operationParams } = extractOperation(operation);
                                       const params = operationParams && typeof operationParams === 'object' 
                                         ? Object.keys(operationParams).filter(key => !excludeFields.includes(key))
                                         : [];
                                       
+                                      const opLineNum = lineNumber++;
+                                      
+                                      // Подсвечиваем только если операция действительно отличается
+                                      const shouldHighlight = opStatus !== 'unchanged';
+                                      
                                       return (
                                         <React.Fragment key={`op-${idx}`}>
-                                          <TableRow>
-                                            <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: 'var(--surface-neutral-secondary)', pt: 1.5, pb: 1 }}>
-                                              {opType}
+                                          <TableRow 
+                                            onClick={() => toggleCollapseFullscreen(idx)}
+                                            sx={{ 
+                                              cursor: 'pointer',
+                                              '&:hover': { backgroundColor: 'var(--surface-neutral-secondary)' }
+                                            }}
+                                          >
+                                            <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: shouldHighlight ? getBackgroundColor(opStatus, side) : 'transparent' }}>
+                                              {opLineNum}
+                                            </TableCell>
+                                            <TableCell colSpan={2} sx={{ fontWeight: 600, backgroundColor: shouldHighlight ? getBackgroundColor(opStatus, side) : 'transparent', pt: 1.5, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                              {isCollapsed ? '▶' : '▼'} {opType || 'N/A'}
                                             </TableCell>
                                           </TableRow>
-                                          {params.length > 0 ? (
+                                          {!isCollapsed && params.length > 0 ? (
                                             params.map((paramKey) => {
-                                              const paramValue = operationParams && typeof operationParams === 'object' 
-                                                ? operationParams[paramKey] 
-                                                : operation[paramKey];
+                                              const paramValue = operationParams[paramKey];
+                                              const otherParamValue = otherOperation ? (extractOperation(otherOperation).operationParams || {})[paramKey] : undefined;
+                                              const paramStatus = getParamDiffStatus(paramValue, otherParamValue);
+                                              const paramLineNum = lineNumber++;
+                                              
+                                              if (Array.isArray(paramValue)) {
+                                                return (
+                                                  <React.Fragment key={`op-${idx}-param-${paramKey}`}>
+                                                    <TableRow sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                      <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                        {paramLineNum}
+                                                      </TableCell>
+                                                      <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                      <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>[{paramValue.length} элементов]</TableCell>
+                                                    </TableRow>
+                                                    {paramValue.map((item, arrIdx) => {
+                                                      if (item && typeof item === 'object' && !Array.isArray(item)) {
+                                                        const itemKeys = Object.keys(item);
+                                                        return (
+                                                          <React.Fragment key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`}>
+                                                            {itemKeys.map((itemKey) => {
+                                                              const itemLineNum = lineNumber++;
+                                                              return (
+                                                                <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}-${itemKey}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                  <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                                    {itemLineNum}
+                                                                  </TableCell>
+                                                                  <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>{itemKey}</TableCell>
+                                                                  <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(item[itemKey])}</TableCell>
+                                                                </TableRow>
+                                                              );
+                                                            })}
+                                                          </React.Fragment>
+                                                        );
+                                                      }
+                                                      const itemLineNum = lineNumber++;
+                                                      return (
+                                                        <TableRow key={`op-${idx}-param-${paramKey}-arr-${arrIdx}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                          <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                            {itemLineNum}
+                                                          </TableCell>
+                                                          <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>[{arrIdx}]</TableCell>
+                                                          <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(item)}</TableCell>
+                                                        </TableRow>
+                                                      );
+                                                    })}
+                                                  </React.Fragment>
+                                                );
+                                              }
                                               if (paramValue && typeof paramValue === 'object' && !Array.isArray(paramValue)) {
                                                 const subParams = Object.keys(paramValue);
                                                 if (subParams.length > 0) {
                                                   return (
                                                     <React.Fragment key={`op-${idx}-param-${paramKey}`}>
-                                                      {subParams.map((subKey) => (
-                                                        <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`}>
-                                                          <TableCell sx={{ width: '20%', fontWeight: 500, pl: 4 }}>{subKey}</TableCell>
-                                                          <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(paramValue[subKey])}</TableCell>
-                                                        </TableRow>
-                                                      ))}
+                                                      <TableRow sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                        <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                          {paramLineNum}
+                                                        </TableCell>
+                                                        <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
+                                                        <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}></TableCell>
+                                                      </TableRow>
+                                                      {subParams.map((subKey) => {
+                                                        const subValue = paramValue[subKey];
+                                                        const otherSubValue = otherParamValue && typeof otherParamValue === 'object' && !Array.isArray(otherParamValue) ? otherParamValue[subKey] : undefined;
+                                                        const subStatus = getParamDiffStatus(subValue, otherSubValue);
+                                                        const subLineNum = lineNumber++;
+                                                        return (
+                                                          <TableRow key={`op-${idx}-param-${paramKey}-${subKey}`} sx={{ backgroundColor: getBackgroundColor(subStatus, side) }}>
+                                                            <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(subStatus, side) }}>
+                                                              {subLineNum}
+                                                            </TableCell>
+                                                            <TableCell sx={{ width: '20%', fontWeight: 500, pl: 6 }}>{subKey}</TableCell>
+                                                            <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(subValue)}</TableCell>
+                                                          </TableRow>
+                                                        );
+                                                      })}
                                                     </React.Fragment>
                                                   );
                                                 }
                                               }
                                               return (
-                                                <TableRow key={`op-${idx}-param-${paramKey}`}>
+                                                <TableRow key={`op-${idx}-param-${paramKey}`} sx={{ backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                  <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2, backgroundColor: getBackgroundColor(paramStatus, side) }}>
+                                                    {paramLineNum}
+                                                  </TableCell>
                                                   <TableCell sx={{ width: '20%', fontWeight: 500 }}>{paramKey}</TableCell>
                                                   <TableCell sx={{ fontFamily: 'monospace', width: '80%' }}>{formatParamValue(paramValue)}</TableCell>
                                                 </TableRow>
                                               );
                                             })
-                                          ) : (
+                                          ) : !isCollapsed && (
                                             <TableRow>
-                                              <TableCell colSpan={2} sx={{ color: 'var(--text-neutral-secondary)', fontStyle: 'italic' }}>
-                                                Нет параметров
+                                              <TableCell sx={{ width: '50px', textAlign: 'right', color: 'var(--text-neutral-secondary)', pr: 2 }}>
+                                                {lineNumber++}
                                               </TableCell>
                                             </TableRow>
                                           )}
@@ -2798,19 +3769,19 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                                 </DialogTitle>
                                 <DialogContent sx={{ p: 0, overflow: 'auto', height: '100%' }}>
                                   <Box sx={{ width: '100%', height: '100%', p: 2 }}>
-                                    <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-                                      <Box>
+                                    <Box sx={{ display: 'flex', gap: 2, flexDirection: 'row', overflowX: 'auto' }}>
+                                      <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                                           {selectedFsTrace.left || availableFsList[0]}
                                         </Typography>
-                                        {renderJsonTable(leftParsed, 'Слева')}
+                                        {renderJsonTable(leftOps, 'left', maxOps)}
                                       </Box>
                                       {selectedFsTrace.right && selectedFsTrace.right !== selectedFsTrace.left && (
-                                        <Box>
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
                                           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                                             {selectedFsTrace.right}
                                           </Typography>
-                                          {renderJsonTable(rightParsed, 'Справа')}
+                                          {renderJsonTable(rightOps, 'right', maxOps)}
                                         </Box>
                                       )}
                                     </Box>
@@ -2822,31 +3793,6 @@ export default function MainMenu({ themeMode = 'light', setThemeMode = () => {} 
                       </>
                     );
                   })()}
-
-                  {/* Аккордион для reason.md (если есть данные) */}
-                  {item.TestCases && item.TestCases.length >= 2 && item.TestCases[0]?.Reason !== undefined && (
-                    <Accordion elevation={0} square sx={{ mb: 2, border: '1px solid var(--border-neutral-primary)', "&:before": { display: "none" } }}>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="fieldHeader">reason.md</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        {item.TestCases[0].Reason && item.TestCases[1].Reason ? (
-                          <Box>
-                            {parseDiff(
-                              formpatch(
-                                typeof item.TestCases[0].Reason === 'string' ? item.TestCases[0].Reason : JSON.stringify(item.TestCases[0].Reason),
-                                typeof item.TestCases[1].Reason === 'string' ? item.TestCases[1].Reason : JSON.stringify(item.TestCases[1].Reason)
-                              ),
-                            ).map(renderFile)}
-                          </Box>
-                        ) : (
-                          <Box sx={{ p: 2, color: 'var(--text-neutral-secondary)' }}>
-                            Нет данных
-                          </Box>
-                        )}
-                      </AccordionDetails>
-                    </Accordion>
-                  )}
                 </>
               ) : null)}
           </TabPanel>
